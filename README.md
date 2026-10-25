@@ -29,18 +29,47 @@
 
 ```
 ├── README.md                  # 本文档
-├── tools/
+├── tools/                     # 自研工具脚本（纯 Python，零第三方依赖）
 │   ├── telnet_session.py      # telnet 自动化会话（Windows 下批量执行命令/抓输出）
 │   ├── tftp_server.py         # TFTP 分区备份服务器（光猫 tftp -p 推送）
 │   ├── http_file_server.py    # HTTP 固件下发服务器（光猫 wget 拉取，无 32MB 限制）
 │   └── extract_firmware.py    # 联通固件包拆解（切出 kernel / uboot 镜像）
-└── firmware/
-    ├── kernel_p1n4.bin        # 联通 kernel 镜像  44,695,552 字节  MD5 b00edea2bac30985305df345d0b876cb
-    ├── uboot_unicom.bin       # 联通 uboot 镜像   1,835,008 字节  MD5 ec60ef2071a60b7d422e252ca7f52248
+├── firmware/
+│   ├── kernel_p1n4.bin        # 联通 kernel 镜像  44,695,552 字节  MD5 b00edea2bac30985305df345d0b876cb
+│   ├── uboot_unicom.bin       # 联通 uboot 镜像   1,835,008 字节  MD5 ec60ef2071a60b7d422e252ca7f52248
+│   └── MD5SUMS.txt
+├── backups/                   # 一台真实设备（本仓库作者机）的分区备份样本
+│   ├── paramtag.bin           # parameter tags 2MB  ★含设备 SN/光校准，每机唯一
+│   ├── wlan.bin               # wlan           2MB  ★含 Wi-Fi 校准，每机唯一
+│   ├── usercfg.bin            # usercfg        8MB  ★含账户库/配置（db 加密格式）
+│   └── MD5SUMS.txt
+└── third_party/               # 第三方工具本体（归属见下节）
+    ├── go_build_zte_go.exe    # zte-telnet (starofys)  Windows 构建版
+    ├── ZTElnet26-windows-amd64.exe  # ZTElnet 2.6（恩山 HavingFun）
     └── MD5SUMS.txt
 ```
 
 原始完整升级包（53MB，HavingFun 重打包版）见[参考链接](#参考链接)，可用 `tools/extract_firmware.py` 自行拆解出上述两个镜像。
+
+### 第三方工具归属与版权
+
+| 文件 | 作者 | 来源 | 许可 |
+|---|---|---|---|
+| `go_build_zte_go.exe` | starofys | [github.com/starofys/zte-telnet](https://github.com/starofys/zte-telnet) | 随上游仓库（开源） |
+| `ZTElnet26-windows-amd64.exe` | HavingFun | [恩山论坛](https://www.right.com.cn/forum/thread-8476080-1-1.html)（免费附件） | 闭源，仅供学习交流，请勿商用倒卖 |
+
+两者均从原始渠道原样收录（MD5 见 `third_party/MD5SUMS.txt`），版权归原作者；本仓库不做任何修改与再打包。
+ZTElnet26 其余平台（linux/mac/arm）的构建版请到恩山原帖下载。
+
+### 设备备份样本说明（backups/）
+
+这是**一台真实设备的原厂备份**，仅供需要研究分区内部结构的人参考（paramtag 的标签布局、
+usercfg 的加密配置头 `01 02 03 04 ...` 等）。
+
+- **不能直接刷进你的机器**：paramtag/wlan 含每台设备独有的光功率校准，usercfg 绑定 SN——
+  跨机写入轻则光模块指标异常，重则注册状态混乱。
+- 备份中含设备 SN 与账户库，公开于此是经过设备所有者确认的决定；**你若想贡献自己的备份，请先想清楚
+  SN 泄露的影响**（如将来在运营商网络注册时可能被他人冒用报装）。
 
 ## 环境准备（Windows）
 
@@ -68,7 +97,7 @@ telnet: cat /proc/mtd                  # 分区表（见文末，必须先核对
 
 ## Step 1 · 开启 telnet（二选一）
 
-**方案 A：ZTElnet26（推荐，新旧固件通吃，复位后/重启后均有效）**
+**方案 A：ZTElnet26（推荐，新旧固件通吃，复位后/重启后均有效，本体见 `third_party/`）**
 
 ```
 ZTElnet26-windows-amd64.exe -i 192.168.1.1 -m <电脑MAC无冒号> -p 80 -u factorymode -pw "nE%jA@5b"
@@ -76,7 +105,7 @@ ZTElnet26-windows-amd64.exe -i 192.168.1.1 -m <电脑MAC无冒号> -p 80 -u fact
 
 输出临时账号密码（每次随机）。`factorymode / nE%jA@5b` 是硬复位后的工厂模式默认凭据，长期有效。
 
-**方案 B：go_build_zte_go（github.com/starofys/zte-telnet，需要当前有效的 web 超密）**
+**方案 B：go_build_zte_go（github.com/starofys/zte-telnet，需要当前有效的 web 超密，本体见 `third_party/`）**
 
 ```
 go_build_zte_go.exe -addr http://192.168.1.1:80 -mac <电脑MAC> -username CMCCAdmin -password aDm8H%MdA
@@ -109,6 +138,7 @@ tftp -p -l /dev/mtd6 192.168.1.100    # middle       6MB
 ```
 
 > **paramtag / wlan / usercfg 是每台机器独有的，别人的备份不能替代你的**。救砖回刷全靠它们。
+> （`backups/` 目录收录了一台真实设备的备份样本，仅供研究分区结构，不可跨机刷入，详见上文说明。）
 > busybox tftp 受 16 位块号限制单文件最大 32MB，大分区（kernel/osgi）如需备份用 `dd` 分段传。
 
 ## Step 3 · 拆解固件包

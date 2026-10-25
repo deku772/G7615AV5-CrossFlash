@@ -1,0 +1,2 @@
+e091d7cc8a3e2427af62efc213590de6  go_build_zte_go.exe
+cb8cabb1b21bb49276c85a9b352b0454  ZTElnet26-windows-amd64.exe
