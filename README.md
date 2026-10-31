@@ -22,6 +22,7 @@
 | WiFi 密码是哪个 | [坑 F](#坑-f--wifi-的密钥14是-wep-槽位不是生效口令) |
 | 能不能切 XGPON | [坑 G](#坑-g--gpon--xgpon设备支持--运营商给你-xgpon) |
 | 网页字段 id 对照 | [full-flow.md §关键 id 对照表](docs/full-flow.md#关键-id-对照表网页自动化用) |
+| **完整页面结构（菜单/字段 id/标签页）** | **[docs/web-ui-structure.md](docs/web-ui-structure.md)** |
 | 完整配置留档 | [docs/config-snapshot-2026-10-31.md](docs/config-snapshot-2026-10-31.md) |
 
 
@@ -49,6 +50,7 @@
 ├── README.md                  # 本文档
 ├── docs/
 │   ├── full-flow.md           # ★ 完整实操流程（照着做一遍）
+│   ├── web-ui-structure.md    # ★ Web 界面页面结构交接文档（菜单树/字段 id/标签页/最终配置基线）
 │   └── config-snapshot-*.md   # 网页抓取的全量配置快照（只读留档/可复现参考）
 ├── tools/                     # 自研工具脚本（纯 Python，零第三方依赖）
 │   ├── telnet_session.py      # telnet 自动化会话（Windows 下批量执行命令/抓输出）
@@ -58,6 +60,9 @@
 │   ├── cdp.py                 # 零依赖 CDP 客户端（纯标准库 WebSocket + JSON-RPC）
 │   ├── zte_ui.py              # 网页操作助手（Playwright 接管本机 Edge：登录/查状态/配 WAN）
 │   ├── zte_snapshot.py        # 全量配置快照抓取（状态/基本配置/高级配置/设备管理）
+│   ├── zte_dump_structure.py  # 抓取 Web 界面完整页面结构 → docs/web-ui-structure.md
+│   ├── zte_dump_detail.py     # 补抓关键配置页字段明细（宽带设置/IPv6/绑定/WLAN）
+│   ├── zte_dump_detail2.py    # 补抓 IPTV 明细 / RA+DHCPv6 标签页 / 上行方式选中项
 │   ├── recover_after_reset.py # 复位后自助恢复（开 telnet / 固化账户 / 关 TR-069）
 │   ├── probe_live.py          # 实机取证：逐条 WAN / 绑定设置 / RA / 上行方式
 │   ├── probe_live2.py         # 实机取证：LAN 二级菜单 / WLAN 双频 / IPTV 详情

@@ -1,0 +1,1037 @@
+[login] 密码框仍在 = False
+[frame] url=http://192.168.1.1/unicom.html frames=['', 'topFrame', 'mainFrame', 'myiframe']
+
+==============================================================================
+== 状态 > 设备信息
+==============================================================================
+URL: http://192.168.1.1/getpage.gch?pid=1002&nextpage=status_dev_info_t.gch
+状态
+| 设备信息 | 网络侧信息 | 用户侧信息 | 统计数据 | 远程管理状态 | 语音信息 | 逻辑ID注册信息 | MESH 拓扑图 | 插件状态 |
+设备基本信息
+进网许可证
+运营商	中国联通
+设备型号	ZXHN G7615AV5
+智能系统	C容器
+设备标识号	D0DD7C-ZTEGD8393A4A
+批次号	07e8P1N404cf
+硬件版本号	V2.0
+软件版本号	V3.0.5P1T1
+ONU注册状态	运行状态(o5)
+区域码信息	区域码配置正常，区域：重庆
+上行方式	GPON
+网上营业厅www.10010.com 网关厂商服务电话:800-8301118 客服热线10010 充值专线10011
+--- fields ---
+  - help_info : 帮助
+
+==============================================================================
+== 状态 > 逻辑ID注册信息
+==============================================================================
+URL: http://192.168.1.1/getpage.gch?pid=1002&nextpage=status_registerinfo_t.gch
+状态
+| 设备信息 | 网络侧信息 | 用户侧信息 | 统计数据 | 远程管理状态 | 语音信息 | 逻辑ID注册信息 | MESH 拓扑图 | 插件状态 |
+逻辑ID注册信息
+注册状态	初始状态
+配置结果	初始状态
+尝试次数	0
+网上营业厅www.10010.com 网关厂商服务电话:800-8301118 客服热线10010 充值专线10011
+--- fields ---
+  - help_info : 帮助
+  -  >> 网上营业厅www.10010.com 网关厂商服务电话:800-8301118 客服热线10010 充值专线10011 :  刷 新 
+
+==============================================================================
+== 基本配置 > 上行线路配置（默认视图）
+==============================================================================
+URL: http://192.168.1.1/getpage.gch?pid=1002&nextpage=IPv46_net_wan_conf_t.gch
+基本配置
+| 上行线路配置 | LAN配置 | WLAN配置 | 绑定设置 | 前缀管理 | 远程管理 | 主从网关端口绑定 | MESH参数配置 |
+WAN连接
+最大接入用户数
+下挂从网关数量
+4in6隧道连接设置
+ARP检测
+DHCP清链
+连接名称
+新建WAN连接
+1_TR069_R_VID_3600
+2_INTERNET_R_VID_48
+3_IPTV_B_VID_3185
+使能
+封装类型
+PPPoE
+IPoE
+连接模式
+路由
+桥接
+业务类型
+INTERNET
+VOICE
+VOICE_INTERNET
+HQoS
+IPTV
+OTHER
+IP协议版本
+IPv4
+IPv6
+IPv4/v6
+用户名
+密码
+MTU
+VLAN 模式
+不启用(untag)
+透传(transparent)
+改写(tag)
+使能DSCP
+DSCP
+启用NAT
+NAT选型
+全对称型NAT
+全锥形NAT
+地址受限型NAT
+DHCP服务使能
+端口绑定	LAN1  LAN2  LAN3  LAN4
+PON
+SSID1  SSID2  SSID3  SSID4
+SSID5  SSID6  SSID7  SSID8
+配置全路由使能
+目的IP转发列表
+启用PassThrough功能
+认证类型
+自动
+PAP
+CHAP
+拨号模式
+自动连接
+按需拨号
+手动连接
+超时时间	秒
+IPv4信息
+地址获取方式
+PPPoE
+启用PPPoE代理
+允许最大用户数
+网上营业厅www.10010.com 网关厂商服务电话:800-8301118 客服热线10010 充值专线10011
+--- select options ---
+[
+ "-1 | 新建WAN连接",
+ "IGD.WD1.WCD1.WCIP1 | 1_TR069_R_VID_3600",
+ "IGD.WD1.WCD3.WCPPP1 | 2_INTERNET_R_VID_48",
+ "IGD.WD1.WCD4.WCIP1 | 3_IPTV_B_VID_3185"
+]
+--- fields ---
+  - help_info : 帮助
+  - 连接名称 >> 新建WAN连接
+1_TR069_R_VID_3600
+2_INTERNET_R_VID_48
+3_IPTV_B_VID_3185 : 新建WAN连接
+  - 使能 >>  : 是
+  - 封装类型 >> PPPoE
+IPoE : PPPoE
+  - 连接模式 >> 路由
+桥接 : 路由
+  - 业务类型 >> INTERNET
+VOICE
+VOICE_INTERNET
+HQoS
+IPTV
+OTHER : INTERNET
+  - IP协议版本 >> IPv4
+IPv6
+IPv4/v6 : IPv4
+  - 用户名 >>  : 
+  - MTU >>  : 1480
+  - VLAN 模式 >> 不启用(untag)
+透传(transparent)
+改写(tag) : 不启用(untag)
+  - VLAN ID >>  : 
+  - 802.1p >> 0
+1
+2
+3
+4
+5
+6
+7 : 0
+  - 使能DSCP >>  : 否
+  - DSCP >>  :  [DISABLED]
+  - 启用NAT >>  : 是
+  - NAT选型 >> 全对称型NAT
+全锥形NAT
+地址受限型NAT : 全对称型NAT
+  - 启用NPTv6 >>  : 否
+  - DHCP服务使能 >>  : 是
+  - 端口绑定 >> LAN1  LAN2  LAN3  LAN4 : 否
+  - 端口绑定 >> LAN1  LAN2  LAN3  LAN4 : 否
+  - 端口绑定 >> LAN1  LAN2  LAN3  LAN4 : 否
+  - 端口绑定 >> LAN1  LAN2  LAN3  LAN4 : 否
+  -  >> PON : 否 [DISABLED]
+  -  >> SSID1  SSID2  SSID3  SSID4 : 否
+  -  >> SSID1  SSID2  SSID3  SSID4 : 否
+  -  >> SSID1  SSID2  SSID3  SSID4 : 否
+  -  >> SSID1  SSID2  SSID3  SSID4 : 否
+  -  >> SSID5  SSID6  SSID7  SSID8 : 否
+  -  >> SSID5  SSID6  SSID7  SSID8 : 否
+  -  >> SSID5  SSID6  SSID7  SSID8 : 否
+  -  >> SSID5  SSID6  SSID7  SSID8 : 否
+  - 配置全路由使能 >>  : 否
+  - 启用PassThrough功能 >>  : 否
+  - 认证类型 >> 自动
+PAP
+CHAP : 自动
+  - 拨号模式 >> 自动连接
+按需拨号
+手动连接 : 自动连接
+  - 超时时间 >> 秒 : 1200 [DISABLED]
+  -  >>  : 连 接 [DISABLED]
+  -  >>  : 断 开 [DISABLED]
+  - 用户名 >>  : 
+  - 地址获取方式 >> PPPoE : PPPoE
+  - 启用PPPoE代理 >>  : 否
+  - 允许最大用户数 >>  : 4 [DISABLED]
+  - IP地址 >>  : 
+  - 子网掩码 >>  : 
+  - 默认网关 >>  : 
+  - 主用DNS >>  : 
+  - 备用DNS >>  : 
+  -  >>  : 释 放 [DISABLED]
+  -  >>  : 续 租 [DISABLED]
+  - IPv6 >> / : 
+  - IPv6 >> / : 
+  - 网关获取方式 >> SLAAC静态配置自适应 : 自适应
+  - IPv6 >>  : 
+  - DNS1 >>  : 
+  - DNS2 >>  : 
+  - IPv6 >> / : 
+  - IPv6 >> / : 
+  -  >> 网上营业厅www.10010.com 网关厂商服务电话:800-8301118 客服热线10010 充值专线10011 :  创 建 
+  -  >> 网上营业厅www.10010.com 网关厂商服务电话:800-8301118 客服热线10010 充值专线10011 :  取 消 
+  -  >> 网上营业厅www.10010.com 网关厂商服务电话:800-8301118 客服热线10010 充值专线10011 :  修 改 
+  -  >> 网上营业厅www.10010.com 网关厂商服务电话:800-8301118 客服热线10010 充值专线10011 :  删 除 
+
+==============================================================================
+== 上行线路配置 > 选中 [-1 | 新建WAN连接]
+==============================================================================
+URL: http://192.168.1.1/getpage.gch?pid=1002&nextpage=IPv46_net_wan_conf_t.gch
+基本配置
+| 上行线路配置 | LAN配置 | WLAN配置 | 绑定设置 | 前缀管理 | 远程管理 | 主从网关端口绑定 | MESH参数配置 |
+WAN连接
+最大接入用户数
+下挂从网关数量
+4in6隧道连接设置
+ARP检测
+DHCP清链
+连接名称
+新建WAN连接
+1_TR069_R_VID_3600
+2_INTERNET_R_VID_48
+3_IPTV_B_VID_3185
+使能
+封装类型
+PPPoE
+IPoE
+连接模式
+路由
+桥接
+业务类型
+INTERNET
+VOICE
+VOICE_INTERNET
+HQoS
+IPTV
+OTHER
+IP协议版本
+IPv4
+IPv6
+IPv4/v6
+用户名
+密码
+MTU
+VLAN 模式
+不启用(untag)
+透传(transparent)
+改写(tag)
+使能DSCP
+DSCP
+启用NAT
+NAT选型
+全对称型NAT
+全锥形NAT
+地址受限型NAT
+DHCP服务使能
+端口绑定	LAN1  LAN2  LAN3  LAN4
+PON
+SSID1  SSID2  SSID3  SSID4
+SSID5  SSID6  SSID7  SSID8
+配置全路由使能
+目的IP转发列表
+启用PassThrough功能
+认证类型
+自动
+PAP
+CHAP
+拨号模式
+自动连接
+按需拨号
+手动连接
+超时时间	秒
+IPv4信息
+地址获取方式
+PPPoE
+启用PPPoE代理
+允许最大用户数
+网上营业厅www.10010.com 网关厂商服务电话:800-8301118 客服热线10010 充值专线10011
+--- fields ---
+  - help_info : 帮助
+  - 连接名称 >> 新建WAN连接
+1_TR069_R_VID_3600
+2_INTERNET_R_VID_48
+3_IPTV_B_VID_3185 : 新建WAN连接
+  - 使能 >>  : 是
+  - 封装类型 >> PPPoE
+IPoE : PPPoE
+  - 连接模式 >> 路由
+桥接 : 路由
+  - 业务类型 >> INTERNET
+VOICE
+VOICE_INTERNET
+HQoS
+IPTV
+OTHER : INTERNET
+  - IP协议版本 >> IPv4
+IPv6
+IPv4/v6 : IPv4
+  - 用户名 >>  : 
+  - MTU >>  : 1480
+  - VLAN 模式 >> 不启用(untag)
+透传(transparent)
+改写(tag) : 不启用(untag)
+  - VLAN ID >>  : 
+  - 802.1p >> 0
+1
+2
+3
+4
+5
+6
+7 : 0
+  - 使能DSCP >>  : 否
+  - DSCP >>  :  [DISABLED]
+  - 启用NAT >>  : 是
+  - NAT选型 >> 全对称型NAT
+全锥形NAT
+地址受限型NAT : 全对称型NAT
+  - 启用NPTv6 >>  : 否
+  - DHCP服务使能 >>  : 是
+  - 端口绑定 >> LAN1  LAN2  LAN3  LAN4 : 否
+  - 端口绑定 >> LAN1  LAN2  LAN3  LAN4 : 否
+  - 端口绑定 >> LAN1  LAN2  LAN3  LAN4 : 否
+  - 端口绑定 >> LAN1  LAN2  LAN3  LAN4 : 否
+  -  >> PON : 否 [DISABLED]
+  -  >> SSID1  SSID2  SSID3  SSID4 : 否
+  -  >> SSID1  SSID2  SSID3  SSID4 : 否
+  -  >> SSID1  SSID2  SSID3  SSID4 : 否
+  -  >> SSID1  SSID2  SSID3  SSID4 : 否
+  -  >> SSID5  SSID6  SSID7  SSID8 : 否
+  -  >> SSID5  SSID6  SSID7  SSID8 : 否
+  -  >> SSID5  SSID6  SSID7  SSID8 : 否
+  -  >> SSID5  SSID6  SSID7  SSID8 : 否
+  - 配置全路由使能 >>  : 否
+  - 启用PassThrough功能 >>  : 否
+  - 认证类型 >> 自动
+PAP
+CHAP : 自动
+  - 拨号模式 >> 自动连接
+按需拨号
+手动连接 : 自动连接
+  - 超时时间 >> 秒 : 1200 [DISABLED]
+  -  >>  : 连 接 [DISABLED]
+  -  >>  : 断 开 [DISABLED]
+  - 用户名 >>  : 
+  - 地址获取方式 >> PPPoE : PPPoE
+  - 启用PPPoE代理 >>  : 否
+  - 允许最大用户数 >>  : 4 [DISABLED]
+  - IP地址 >>  : 
+  - 子网掩码 >>  : 
+  - 默认网关 >>  : 
+  - 主用DNS >>  : 
+  - 备用DNS >>  : 
+  -  >>  : 释 放 [DISABLED]
+  -  >>  : 续 租 [DISABLED]
+  - IPv6 >> / : 
+  - IPv6 >> / : 
+  - 网关获取方式 >> SLAAC静态配置自适应 : 自适应
+  - IPv6 >>  : 
+  - DNS1 >>  : 
+  - DNS2 >>  : 
+  - IPv6 >> / : 
+  - IPv6 >> / : 
+  -  >> 网上营业厅www.10010.com 网关厂商服务电话:800-8301118 客服热线10010 充值专线10011 :  创 建 
+  -  >> 网上营业厅www.10010.com 网关厂商服务电话:800-8301118 客服热线10010 充值专线10011 :  取 消 
+  -  >> 网上营业厅www.10010.com 网关厂商服务电话:800-8301118 客服热线10010 充值专线10011 :  修 改 
+  -  >> 网上营业厅www.10010.com 网关厂商服务电话:800-8301118 客服热线10010 充值专线10011 :  删 除 
+
+==============================================================================
+== 上行线路配置 > 选中 [IGD.WD1.WCD1.WCIP1 | 1_TR069_R_VID_3600]
+==============================================================================
+URL: http://192.168.1.1/getpage.gch?pid=1002&nextpage=IPv46_net_wan_conf_t.gch
+基本配置
+| 上行线路配置 | LAN配置 | WLAN配置 | 绑定设置 | 前缀管理 | 远程管理 | 主从网关端口绑定 | MESH参数配置 |
+WAN连接
+最大接入用户数
+下挂从网关数量
+4in6隧道连接设置
+ARP检测
+DHCP清链
+连接名称
+新建WAN连接
+1_TR069_R_VID_3600
+2_INTERNET_R_VID_48
+3_IPTV_B_VID_3185
+使能
+封装类型
+PPPoE
+IPoE
+连接模式
+路由
+桥接
+业务类型
+INTERNET
+TR069
+TR069_INTERNET
+VOICE
+VOICE_INTERNET
+TR069_VOICE
+TR069_VOICE_INTERNET
+IPTV
+OTHER
+HQoS
+IP协议版本
+IPv4
+IPv6
+IPv4/v6
+MTU
+VLAN 模式
+不启用(untag)
+透传(transparent)
+改写(tag)
+VLAN ID
+802.1p
+0
+1
+2
+3
+4
+5
+6
+7
+使能DSCP
+DSCP
+配置全路由使能
+目的IP转发列表
+IPv4信息
+地址获取方式
+Static
+DHCP
+网上营业厅www.10010.com 网关厂商服务电话:800-8301118 客服热线10010 充值专线10011
+--- fields ---
+  - help_info : 帮助
+  - 连接名称 >> 新建WAN连接
+1_TR069_R_VID_3600
+2_INTERNET_R_VID_48
+3_IPTV_B_VID_3185 : 1_TR069_R_VID_3600
+  - 使能 >>  : 否
+  - 封装类型 >> PPPoE
+IPoE : IPoE [DISABLED]
+  - 连接模式 >> 路由
+桥接 : 路由 [DISABLED]
+  - 业务类型 >> INTERNET
+TR069
+TR069_INTERNET
+VOICE
+VOICE_INTERNET
+TR069_VOICE
+TR069_VOICE_INTERNET
+IPTV
+OTHER
+HQoS : TR069 [DISABLED]
+  - IP协议版本 >> IPv4
+IPv6
+IPv4/v6 : IPv4
+  - 用户名 >>  : 
+  - MTU >>  : 1480
+  - VLAN 模式 >> 不启用(untag)
+透传(transparent)
+改写(tag) : 改写(tag)
+  - VLAN ID >>  : 3600
+  - 802.1p >> 0
+1
+2
+3
+4
+5
+6
+7 : 7
+  - 使能DSCP >>  : 否
+  - DSCP >>  :  [DISABLED]
+  - 启用NAT >>  : 否
+  - NAT选型 >> 全对称型NAT
+全锥形NAT
+地址受限型NAT : 全对称型NAT
+  - 启用NPTv6 >>  : 否
+  - DHCP服务使能 >>  : 否
+  - 端口绑定 >> LAN1  LAN2  LAN3  LAN4 : 否
+  - 端口绑定 >> LAN1  LAN2  LAN3  LAN4 : 否
+  - 端口绑定 >> LAN1  LAN2  LAN3  LAN4 : 否
+  - 端口绑定 >> LAN1  LAN2  LAN3  LAN4 : 否
+  -  >> PON : 否 [DISABLED]
+  -  >> SSID1 
+SSID2 
+SSID3 
+SSID4 : 否
+  -  >> SSID1 
+SSID2 
+SSID3 
+SSID4 : 否
+  -  >> SSID1 
+SSID2 
+SSID3 
+SSID4 : 否
+  -  >> SSID1 
+SSID2 
+SSID3 
+SSID4 : 否
+  -  >> SSID5 
+SSID6 
+SSID7 
+SSID8 : 否
+  -  >> SSID5 
+SSID6 
+SSID7 
+SSID8 : 否
+  -  >> SSID5 
+SSID6 
+SSID7 
+SSID8 : 否
+  -  >> SSID5 
+SSID6 
+SSID7 
+SSID8 : 否
+  - 配置全路由使能 >>  : 否
+  - 启用PassThrough功能 >>  : 否
+  - 认证类型 >> 自动
+PAP
+CHAP : 自动
+  - 拨号模式 >> 自动连接
+按需拨号
+手动连接 : 自动连接
+  - 超时时间 >> 秒 :  [DISABLED]
+  -  >>  : 连 接 [DISABLED]
+  -  >>  : 断 开 [DISABLED]
+  - 用户名 >>  : 
+  - 地址获取方式 >> Static
+DHCP : DHCP
+  - 启用PPPoE代理 >>  : 否
+  - 允许最大用户数 >>  : 4 [DISABLED]
+  - IP地址 >>  : 
+  - 子网掩码 >>  : 
+  - 默认网关 >>  : 
+  - 主用DNS >>  : 
+  - 备用DNS >>  : 
+  -  >>  : 释 放 [DISABLED]
+  -  >>  : 续 租 [DISABLED]
+  - IPv6 >> / : 
+  - IPv6 >> / : 
+  - 网关获取方式 >> SLAAC静态配置自适应 : SLAAC
+  - IPv6 >>  : 
+  - DNS1 >>  : 
+  - DNS2 >>  : 
+  - IPv6 >> / : 
+  - IPv6 >> / : 
+  -  >> 网上营业厅www.10010.com 网关厂商服务电话:800-8301118 客服热线10010 充值专线10011 :  创 建 
+  -  >> 网上营业厅www.10010.com 网关厂商服务电话:800-8301118 客服热线10010 充值专线10011 :  取 消 
+  -  >> 网上营业厅www.10010.com 网关厂商服务电话:800-8301118 客服热线10010 充值专线10011 :  修 改 
+  -  >> 网上营业厅www.10010.com 网关厂商服务电话:800-8301118 客服热线10010 充值专线10011 :  删 除 
+
+==============================================================================
+== 上行线路配置 > 选中 [IGD.WD1.WCD3.WCPPP1 | 2_INTERNET_R_VID_48]
+==============================================================================
+URL: http://192.168.1.1/getpage.gch?pid=1002&nextpage=IPv46_net_wan_conf_t.gch
+基本配置
+| 上行线路配置 | LAN配置 | WLAN配置 | 绑定设置 | 前缀管理 | 远程管理 | 主从网关端口绑定 | MESH参数配置 |
+WAN连接
+最大接入用户数
+下挂从网关数量
+4in6隧道连接设置
+ARP检测
+DHCP清链
+连接名称
+新建WAN连接
+1_TR069_R_VID_3600
+2_INTERNET_R_VID_48
+3_IPTV_B_VID_3185
+使能
+封装类型
+PPPoE
+IPoE
+连接模式
+路由
+桥接
+业务类型
+INTERNET
+TR069
+TR069_INTERNET
+VOICE
+VOICE_INTERNET
+TR069_VOICE
+TR069_VOICE_INTERNET
+IPTV
+OTHER
+HQoS
+IP协议版本
+IPv4
+IPv6
+IPv4/v6
+用户名
+密码
+MTU
+VLAN 模式
+不启用(untag)
+透传(transparent)
+改写(tag)
+VLAN ID
+802.1p
+0
+1
+2
+3
+4
+5
+6
+7
+使能DSCP
+DSCP
+启用NAT
+NAT选型
+全对称型NAT
+全锥形NAT
+地址受限型NAT
+启用NPTv6
+DHCP服务使能
+端口绑定	LAN1  LAN2  LAN3  LAN4
+PON
+SSID1  SSID2  SSID3  SSID4
+SSID5  SSID6  SSID7  SSID8
+配置全路由使能
+目的IP转发列表
+启用PassThrough功能
+认证类型
+自动
+PAP
+CHAP
+IPv4信息
+地址获取方式
+PPPoE
+IPv6信息
+全局地址获取方式
+SLAAC
+DHCPv6
+静态配置
+自适应
+网关获取方式
+SLAAC
+静态配置
+自适应
+DNS获取方式
+SLAAC
+DHCPv6
+静态配置
+自适应
+前缀获取方式
+DHCPv6
+静态配置
+PPPoE
+网上营业厅www.10010.com 网关厂商服务电话:800-8301118 客服热线10010 充值专线10011
+--- fields ---
+  - help_info : 帮助
+  - 连接名称 >> 新建WAN连接
+1_TR069_R_VID_3600
+2_INTERNET_R_VID_48
+3_IPTV_B_VID_3185 : 2_INTERNET_R_VID_48
+  - 使能 >>  : 是
+  - 封装类型 >> PPPoE
+IPoE : PPPoE [DISABLED]
+  - 连接模式 >> 路由
+桥接 : 路由
+  - 业务类型 >> INTERNET
+TR069
+TR069_INTERNET
+VOICE
+VOICE_INTERNET
+TR069_VOICE
+TR069_VOICE_INTERNET
+IPTV
+OTHER
+HQoS : INTERNET [DISABLED]
+  - IP协议版本 >> IPv4
+IPv6
+IPv4/v6 : IPv4/v6
+  - 用户名 >>  : clan2301317426
+  - 密码 >>  : ******
+  - MTU >>  : 1480
+  - VLAN 模式 >> 不启用(untag)
+透传(transparent)
+改写(tag) : 改写(tag)
+  - VLAN ID >>  : 48
+  - 802.1p >> 0
+1
+2
+3
+4
+5
+6
+7 : 0
+  - 使能DSCP >>  : 否
+  - DSCP >>  :  [DISABLED]
+  - 启用NAT >>  : 是
+  - NAT选型 >> 全对称型NAT
+全锥形NAT
+地址受限型NAT : 全对称型NAT
+  - 启用NPTv6 >>  : 否
+  - DHCP服务使能 >>  : 是
+  - 端口绑定 >> LAN1  LAN2  LAN3  LAN4 : 是
+  - 端口绑定 >> LAN1  LAN2  LAN3  LAN4 : 是
+  - 端口绑定 >> LAN1  LAN2  LAN3  LAN4 : 是
+  - 端口绑定 >> LAN1  LAN2  LAN3  LAN4 : 否
+  -  >> PON : 否 [DISABLED]
+  -  >> SSID1  SSID2  SSID3  SSID4 : 是
+  -  >> SSID1  SSID2  SSID3  SSID4 : 否
+  -  >> SSID1  SSID2  SSID3  SSID4 : 否
+  -  >> SSID1  SSID2  SSID3  SSID4 : 否
+  -  >> SSID5  SSID6  SSID7  SSID8 : 是
+  -  >> SSID5  SSID6  SSID7  SSID8 : 否
+  -  >> SSID5  SSID6  SSID7  SSID8 : 否
+  -  >> SSID5  SSID6  SSID7  SSID8 : 否
+  - 配置全路由使能 >>  : 否
+  - 启用PassThrough功能 >>  : 否
+  - 认证类型 >> 自动
+PAP
+CHAP : 自动
+  - 拨号模式 >> 自动连接
+按需拨号
+手动连接 : 自动连接
+  - 超时时间 >> 秒 : 1200 [DISABLED]
+  -  >>  : 连 接 [DISABLED]
+  -  >>  : 断 开 [DISABLED]
+  - 用户名 >>  : 
+  - 地址获取方式 >> PPPoE : PPPoE
+  - 启用PPPoE代理 >>  : 否
+  - 允许最大用户数 >>  : 4 [DISABLED]
+  - IP地址 >>  : 
+  - 子网掩码 >>  : 
+  - 默认网关 >>  : 
+  - 主用DNS >>  : 
+  - 备用DNS >>  : 
+  -  >>  : 释 放 [DISABLED]
+  -  >>  : 续 租 [DISABLED]
+  - 全局地址获取方式 >> SLAAC
+DHCPv6
+静态配置
+自适应 : SLAAC
+  - IPv6 >> / : 2408:8262:7e59:2219:d2dd:7cff:fe85:953f
+  - IPv6 >> / : 64
+  - 网关获取方式 >> SLAAC
+静态配置
+自适应 : 自适应
+  - IPv6 >>  : fe80::d6c1:c8ff:fe8c:9200
+  - DNS获取方式 >> SLAAC
+DHCPv6
+静态配置
+自适应 : SLAAC
+  - DNS1 >>  : 2408:8662::2
+  - DNS2 >>  : 2408:8663::2
+  - 前缀获取方式 >> DHCPv6
+静态配置
+PPPoE : DHCPv6
+  - IPv6 >> / : 2408:8262:7e59:5045::
+  - IPv6 >> / : 64
+  -  >> 网上营业厅www.10010.com 网关厂商服务电话:800-8301118 客服热线10010 充值专线10011 :  创 建 
+  -  >> 网上营业厅www.10010.com 网关厂商服务电话:800-8301118 客服热线10010 充值专线10011 :  取 消 
+  -  >> 网上营业厅www.10010.com 网关厂商服务电话:800-8301118 客服热线10010 充值专线10011 :  修 改 
+  -  >> 网上营业厅www.10010.com 网关厂商服务电话:800-8301118 客服热线10010 充值专线10011 :  删 除 
+
+==============================================================================
+== 上行线路配置 > 选中 [IGD.WD1.WCD4.WCIP1 | 3_IPTV_B_VID_3185]
+==============================================================================
+URL: http://192.168.1.1/getpage.gch?pid=1002&nextpage=IPv46_net_wan_conf_t.gch
+基本配置
+| 上行线路配置 | LAN配置 | WLAN配置 | 绑定设置 | 前缀管理 | 远程管理 | 主从网关端口绑定 | MESH参数配置 |
+WAN连接
+最大接入用户数
+下挂从网关数量
+4in6隧道连接设置
+ARP检测
+DHCP清链
+连接名称
+新建WAN连接
+1_TR069_R_VID_3600
+2_INTERNET_R_VID_48
+3_IPTV_B_VID_3185
+使能
+封装类型
+PPPoE
+IPoE
+连接模式
+路由
+桥接
+业务类型
+INTERNET
+TR069
+TR069_INTERNET
+VOICE
+VOICE_INTERNET
+TR069_VOICE
+TR069_VOICE_INTERNET
+IPTV
+OTHER
+HQoS
+IP协议版本
+IPv4
+IPv6
+IPv4/v6
+VLAN 模式
+不启用(untag)
+透传(transparent)
+改写(tag)
+VLAN ID
+802.1p
+0
+1
+2
+3
+4
+5
+6
+7
+使能DSCP
+DSCP
+DHCP服务使能
+端口绑定	LAN1  LAN2  LAN3  LAN4
+PON
+SSID1  SSID2  SSID3  SSID4
+SSID5  SSID6  SSID7  SSID8
+网上营业厅www.10010.com 网关厂商服务电话:800-8301118 客服热线10010 充值专线10011
+--- fields ---
+  - help_info : 帮助
+  - 连接名称 >> 新建WAN连接
+1_TR069_R_VID_3600
+2_INTERNET_R_VID_48
+3_IPTV_B_VID_3185 : 3_IPTV_B_VID_3185
+  - 使能 >>  : 是
+  - 封装类型 >> PPPoE
+IPoE : IPoE [DISABLED]
+  - 连接模式 >> 路由
+桥接 : 桥接
+  - 业务类型 >> INTERNET
+TR069
+TR069_INTERNET
+VOICE
+VOICE_INTERNET
+TR069_VOICE
+TR069_VOICE_INTERNET
+IPTV
+OTHER
+HQoS : IPTV [DISABLED]
+  - IP协议版本 >> IPv4
+IPv6
+IPv4/v6 : IPv4
+  - 用户名 >>  : 
+  - MTU >>  : 
+  - VLAN 模式 >> 不启用(untag)
+透传(transparent)
+改写(tag) : 改写(tag)
+  - VLAN ID >>  : 3185
+  - 802.1p >> 0
+1
+2
+3
+4
+5
+6
+7 : 0
+  - 使能DSCP >>  : 否
+  - DSCP >>  :  [DISABLED]
+  - 启用NAT >>  : 是
+  - NAT选型 >> 全对称型NAT
+全锥形NAT
+地址受限型NAT : 全对称型NAT
+  - 启用NPTv6 >>  : 否
+  - DHCP服务使能 >>  : 否
+  - 端口绑定 >> LAN1  LAN2  LAN3  LAN4 : 否
+  - 端口绑定 >> LAN1  LAN2  LAN3  LAN4 : 否
+  - 端口绑定 >> LAN1  LAN2  LAN3  LAN4 : 否
+  - 端口绑定 >> LAN1  LAN2  LAN3  LAN4 : 是
+  -  >> PON : 否 [DISABLED]
+  -  >> SSID1  SSID2  SSID3  SSID4 : 否
+  -  >> SSID1  SSID2  SSID3  SSID4 : 否
+  -  >> SSID1  SSID2  SSID3  SSID4 : 否
+  -  >> SSID1  SSID2  SSID3  SSID4 : 否
+  -  >> SSID5  SSID6  SSID7  SSID8 : 否
+  -  >> SSID5  SSID6  SSID7  SSID8 : 否
+  -  >> SSID5  SSID6  SSID7  SSID8 : 否
+  -  >> SSID5  SSID6  SSID7  SSID8 : 否
+  - 配置全路由使能 >>  : 否
+  - 启用PassThrough功能 >>  : 否
+  - 认证类型 >> 自动
+PAP
+CHAP : 自动
+  - 拨号模式 >> 自动连接
+按需拨号
+手动连接 : 自动连接
+  - 超时时间 >> 秒 :  [DISABLED]
+  -  >>  : 连 接 [DISABLED]
+  -  >>  : 断 开 [DISABLED]
+  - 用户名 >>  : 
+  - 地址获取方式 >> StaticDHCP : DHCP
+  - 启用PPPoE代理 >>  : 否
+  - 允许最大用户数 >>  : 4 [DISABLED]
+  - IP地址 >>  : 
+  - 子网掩码 >>  : 
+  - 默认网关 >>  : 
+  - 主用DNS >>  : 
+  - 备用DNS >>  : 
+  -  >>  : 释 放 [DISABLED]
+  -  >>  : 续 租 [DISABLED]
+  - IPv6 >> / : 
+  - IPv6 >> / : 
+  - IPv6 >>  : 
+  - DNS1 >>  : 
+  - DNS2 >>  : 
+  - IPv6 >> / : 
+  - IPv6 >> / : 
+  -  >> 网上营业厅www.10010.com 网关厂商服务电话:800-8301118 客服热线10010 充值专线10011 :  创 建 
+  -  >> 网上营业厅www.10010.com 网关厂商服务电话:800-8301118 客服热线10010 充值专线10011 :  取 消 
+  -  >> 网上营业厅www.10010.com 网关厂商服务电话:800-8301118 客服热线10010 充值专线10011 :  修 改 
+  -  >> 网上营业厅www.10010.com 网关厂商服务电话:800-8301118 客服热线10010 充值专线10011 :  删 除 
+
+==============================================================================
+== 基本配置 > LAN配置
+==============================================================================
+URL: http://192.168.1.1/getpage.gch?pid=1002&nextpage=net_dhcp_dynamic_t.gch
+基本配置
+| 上行线路配置 | LAN配置 | WLAN配置 | 绑定设置 | 前缀管理 | 远程管理 | 主从网关端口绑定 | MESH参数配置 |
+DHCPv4配置
+静态分配客户端配置
+特殊设备地址配置
+端口DHCP服务控制
+RA配置
+DHCPv6配置
+IPv6前缀管理
+DHCP Isolation配置
+IP地址
+子网掩码
+DNS来源
+家庭网关代理
+静态配置
+网络连接
+首选DNS
+备选DNS
+启动DHCP服务
+启动Option125服务
+租期
+一分钟
+一小时
+一天
+三天
+一周
+7200秒
+起始IP地址
+结束IP地址
+注：接入设备不属于指定的特殊设备类型时，将从此地址池分配地址。
+已分配的地址
+MAC地址	IP地址	剩余租期	主机名	端口
+88:88:88:88:87:88	192.168.1.89	5167		LAN3
+36:b5:13:56:78:b2	192.168.1.195	4285		SSID5
+f4:2d:06:65:30:17	192.168.1.30	6209		LAN1
+网上营业厅www.10010.com 网关厂商服务电话:800-8301118 客服热线10010 充值专线10011
+--- fields ---
+  - help_info : 帮助
+  - IP地址 >>  : 192.168.1.1
+  - 子网掩码 >>  : 255.255.255.0
+  - DNS来源 >> 家庭网关代理
+静态配置
+网络连接 : 静态配置
+  - 接口 >> 2_INTERNET_R_VID_48 : 2_INTERNET_R_VID_48
+  - 首选DNS >>  : 114.114.114.114
+  - 备选DNS >>  : 8.8.8.8
+  - 启动DHCP服务 >>  : 是
+  - 启动Option125服务 >>  : 否
+  - 租期 >> 一分钟
+一小时
+一天
+三天
+一周
+7200秒 : 7200秒
+  - 起始IP地址 >>  : 192.168.1.2
+  - 结束IP地址 >>  : 192.168.1.254
+  - 缺省网关 >>  : 
+  - 88:88:88:88:87:88 >> 192.168.1.89 : qing-home
+  - 36:b5:13:56:78:b2 >> 192.168.1.195 : OnePlus-15
+  - f4:2d:06:65:30:17 >> 192.168.1.30 : ZXSLC SR7410-f4:2d:06:65:30:17
+  - Btn_Prev : 上一页 [DISABLED]
+  - Btn_Next : 最后一页 [DISABLED]
+  -  >> 网上营业厅www.10010.com 网关厂商服务电话:800-8301118 客服热线10010 充值专线10011 :  确 定 
+  -  >> 网上营业厅www.10010.com 网关厂商服务电话:800-8301118 客服热线10010 充值专线10011 :  取 消 
+[RA配置 失败] Locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator("text=RA配置").first
+
+[DHCPv6配置 失败] Locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator("text=DHCPv6配置").first
+
+[IPv6前缀管理 失败] Locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator("text=IPv6前缀管理").first
+
+[WLAN 失败] Locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator("text=WLAN配置").first
+
+[绑定设置 失败] Locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator("text=绑定设置").first
+
+[远程管理 失败] Locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator("text=远程管理").first
+
+[LOID配置 失败] Locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator("text=LOID配置").first
+
+[上行方式 失败] Locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator("text=上行方式").first
+
+[IPv4 WAN连接信息 失败] Locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator("text=网络侧信息").first
+
+[IPv6 WAN连接信息 失败] Locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator("text=网络侧信息").first
+
+[上行接口信息 失败] Locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator("text=网络侧信息").first
+
+[下行光接口信息 失败] Locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator("text=网络侧信息").first
+
+[用户侧信息 失败] Locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator("text=用户侧信息").first
+
+[远程管理状态 失败] Locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator("text=远程管理状态").first
