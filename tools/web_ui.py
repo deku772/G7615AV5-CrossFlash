@@ -141,8 +141,10 @@ def main():
             page.wait_for_timeout(1500)
 
         elif cmd == "wan":
-            do_login(page, sys.argv[2] if len(sys.argv) > 2 else "cqadmin",
-                     sys.argv[3] if len(sys.argv) > 3 else "cqunicom")
+            # 账号密码必须从命令行传入，不在代码里留默认凭据
+            if len(sys.argv) <= 3:
+                sys.exit("用法: python web_ui.py wan <用户名> <密码>")
+            do_login(page, sys.argv[2], sys.argv[3])
             # 先抓首页所有可点菜单
             links = []
             for a in page.query_selector_all("a, li, div[onclick]"):

@@ -13,7 +13,10 @@ SHOT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
 os.makedirs(SHOT, exist_ok=True)
 
 USER = sys.argv[1] if len(sys.argv) > 1 else "user"
-PWD = sys.argv[2] if len(sys.argv) > 2 else "FcT2t#xD"
+# 密码从命令行传入，不要写死在本文件里
+if len(sys.argv) <= 2:
+    sys.exit("用法: python wan_probe.py <用户名> <密码>")
+PWD = sys.argv[2]
 
 
 def dump_frame(fr, tag):

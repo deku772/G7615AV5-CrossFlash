@@ -12,7 +12,7 @@
 
 用法:
   python tools/solidify.py 192.168.1.1 <telnet用户> <telnet密码>
-  python tools/solidify.py 192.168.1.1 root 12345 --admin cqadmin:cqunicom --user user:mypass --tr069-off --reboot
+  python tools/solidify.py 192.168.1.1 root 12345 --admin myadmin:myadminpass --user myuser:myuserpass --tr069-off --reboot
   python tools/solidify.py 192.168.1.1 root 12345 --admin a:b --dry-run
 """
 import argparse

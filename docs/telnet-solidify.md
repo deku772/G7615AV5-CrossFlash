@@ -14,7 +14,7 @@
 |---|---|---|---|
 | `Lan_Enable` | `0` | **`1`** | ★ 关键：telnetd 是否监听 LAN 侧 23 端口 |
 | `TSLan_UName` | `root` | `root` | LAN 侧 telnet 账号 |
-| `TSLan_UPwd` | `ZTEGD8393A4A` | **`12345`** | LAN 侧 telnet 密码 |
+| `TSLan_UPwd` | `<设备 SN>`（出厂用序列号当密码） | **`12345`** | LAN 侧 telnet 密码 |
 | `Max_Con_Num` | `2` | **`999`** | 最大并发连接数（默认 2 会占满） |
 | `ExitTime` | `5` | **`999`** | 空闲超时（分钟），默认 5 分钟就断 |
 | `InitSecLvl` | `0` | **`3`** | 初始化安全级别 |

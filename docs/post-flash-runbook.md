@@ -218,7 +218,7 @@ python tools/backup_restore.py 192.168.1.1 root 12345 restore backups/2026-11-01
 | 重启后 telnet 又连不上 | 只覆盖了 `db_user_cfg.xml`，没覆盖 `db_backup_cfg.xml` | 两个文件都推，`sync` 后重启 |
 | 改完立刻变回去 | 执行了 `sendcmd 1 DB save` 或 `rreset` | 重推后**只 `reboot`** |
 | `DB set TelnetCfg` 没反应 | 该表运行时只读 | 走配置文件路径 |
-| 网页登录跳到注册页 | LOID 未注册（`Status=99`） | 见 [full-flow.md](full-flow.md) 注册章节 |
+| 网页登录跳到注册页 | LOID 未注册（`Status=99`） | 正常注册见 [full-flow.md](full-flow.md) Step 18；**注册后仍跳**见 [enshan-tutorial.md §14.1](enshan-tutorial.md#141-一直跳-loid-注册页怎么办有线wifi-都跳) |
 | 改了超密却登不进 | 改错行（把 Level 含义认反了） | 用「管理员账户」入口反推，或换 `--admin-level 2` |
 | 配置过几天自己变了 | TR069 还开着 | 关 `Tr069Enable`，再恢复备份 |
 | 网页点确定报「当前操作无效」 | 手工插过 WAN 行，索引没重建 | 用原厂备份做基底重做 |

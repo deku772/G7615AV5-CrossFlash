@@ -557,7 +557,7 @@ URL: `/getpage.gch?pid=1002&nextpage=pon_net_ponloid_t.gch`
 | 标签 | id | 类型 | 当前值 | 选项 |
 |---|---|---|---|---|
 |  | `help_info` | button | 帮助 |  |
-| LOID配置 | `Frm_PonLoid` | text | H300340046 |  |
+| LOID配置 | `Frm_PonLoid` | text | 你的 LOID（最长 24 位） |  |
 | 密码 | `Frm_LoidPasswd` | password | ****** |  |
 |  | `reg` | button | 认证注册 |  |
 |  | `save` | button | 保存 |  |
@@ -1214,7 +1214,7 @@ URL: `/getpage.gch?pid=1002&nextpage=ipv6_net_prefix_t.gch`
 | 项 | 值 | 来源 |
 |---|---|---|
 | 设备型号 | ZXHN G7615AV5 | 状态 › 设备信息 |
-| 设备标识号 | D0DD7C-ZTEGD8393A4A | 同上 |
+| 设备标识号 | D0DD7C-<设备SN已脱敏> | 同上 |
 | 软件版本 | V3.0.5P1T1 | 同上 |
 | 硬件版本 | V2.0 | 同上 |
 | 区域 | 重庆 | 同上 |
