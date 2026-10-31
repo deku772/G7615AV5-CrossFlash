@@ -16,6 +16,7 @@
 | 想搞懂 telnet 固化为什么这么做 | [docs/telnet-solidify.md](docs/telnet-solidify.md) — 加密算法与三个陷阱 |
 | 要写脚本操作网页 / 查字段 id | [docs/web-ui-structure.md](docs/web-ui-structure.md) — 菜单树与字段对照 |
 | 配置乱了想回滚 | [附录 · 备份与回滚](#备份与回滚) |
+| **网页一直跳 LOID 注册页（有线/WiFi 都跳）** | **[附录 A · 坑 H](#坑-h--有线--wifi-打开网页就被拽去-loid-注册页)** — 三条命令解决 |
 
 > 本文（README）是**索引 + 附录**：主流程只给一页速查，具体操作看教程；
 > 所有踩坑、分区表、地区码统一放在文末**附录**，不打断阅读。
@@ -61,7 +62,7 @@
 | 9 | telnet 使能 | 复位后 `factorymode` 必过，先开壳别赌 web 超密 |
 | 10 | **固化 + 改超密 + 关 TR069** | `solidify.py --admin a:b --tr069-off --reboot` |
 | 11 | 网页配业务 | WAN/PPPoE、IPv6、DNS、WiFi（**不碰 shell 写库**） |
-| 12 | 插光纤注册 + 备份 | LOID 注册 → `Status=0/Result=1` → `backup_restore.py` |
+| 12 | 插光纤注册 + 备份 | LOID 注册 → `Status=0/Result=1` → `backup_restore.py`（跳注册页见坑 H） |
 
 **"黄金 10 分钟"**：第 8 步复位后到第 11 步之前，设备是干净默认库，固化必须在这个窗口内完成；
 插了光纤再固化就是和 ITMS 抢时间。
@@ -145,7 +146,7 @@ python tools\backup_restore.py 192.168.1.1 root 12345 restore backups\<日期>\d
 
 # 附录
 
-## 附录 A · 七个真正卡住人的坑
+## 附录 A · 八个真正卡住人的坑
 
 > A~C 是刷完固件必踩的，D~G 是手动配业务时的四个高频误解。
 
@@ -277,6 +278,47 @@ XGPON 是**物理层标准**，局端（OLT）必须发 XGPON 光谱。**局端�
 **只要网页能进、PPPoE 能拨号，就是 GPON 在跑。**
 
 > 刷完联通固件后默认就是 `1`（自适应），所以状态页显示"上行方式 GPON"是协商结果，不是被限制。
+
+### 坑 H · 有线 / WiFi 打开网页就被拽去 LOID 注册页
+
+**现象**：不管插网线还是连 WiFi，打开 `192.168.1.1` 一律跳到 LOID 注册页，登录后也进不了管理界面。
+换电脑、换口、换浏览器、清 cookie 全无效。
+
+**不是网络问题**。拦截在 httpd 层，判定只有一句：
+
+```
+Status == "0" && Result == "1"  →  「已注册成功，无需再注册。」
+否则                            →  渲染 LOID 表单 / 登录后 redirect
+```
+
+值存在 `PDTCTUSERINFO` 表，未注册时是 `Status=99 Result=99`。所以换接入方式没用，是设备自己认为没注册。
+
+**三条 set 解决**（这是本仓库被问得最多的一条）：
+
+```
+sendcmd 1 DB set PDTCTUSERINFO 0 Status 0
+sendcmd 1 DB set PDTCTUSERINFO 0 Result 1
+sendcmd 1 DB set PDTCTUSERINFO 0 AutoRegFlg 0
+sendcmd 1 DB save
+cp /userconfig/cfg/db_user_cfg.xml /userconfig/cfg/db_backup_cfg.xml
+reboot
+```
+
+三个容易漏的点：
+
+| 漏了会怎样 | 原因 |
+|---|---|
+| 不写 `AutoRegFlg 0` | 重启后自动注册把值改回 `99/99` |
+| 只 `DB save` 不 `cp` | `DB save` 只写 `db_user_cfg.xml`，重启被 `db_backup_cfg.xml` 回滚 |
+| 不重启 | httpd 缓存 `OBJ_USER_REGISTER` 运行态对象，改完 DB 网页不会立刻变，kill httpd 也没用 |
+
+**验证**：`curl -s http://192.168.1.1/register.gch` 只返回一句「已注册成功，无需再注册。」即成功；
+重启后再查一次 `sendcmd 1 DB p PDTCTUSERINFO`，值必须还是 `0/1/0`。
+
+**注意**：这只是关掉本地注册入口的判定，**不改变 OLT 侧注册状态**。PON 灯还在闪的话，网页不跳了照样上不了网。
+以后真要重新注册，需先把 `Status/Result` 改回 `99/99`、`AutoRegFlg` 改回 `1` 再重启。
+
+完整原理、副作用与踩坑过程见 [enshan-tutorial.md §14.1](docs/enshan-tutorial.md#141-一直跳-loid-注册页怎么办有线wifi-都跳)。
 
 ---
 

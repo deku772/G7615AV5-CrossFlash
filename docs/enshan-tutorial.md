@@ -63,7 +63,7 @@
 | 8 | 切地区码 + **拔光纤物理复位（灯全亮）** | 6 min | — |
 | 9 | telnet 使能 → **固化 + 改超密 + 关 TR069** | 10 min | 顺序错会白做 |
 | 10 | 网页配业务（WAN / IPv6 / DNS / WiFi） | 20 min | — |
-| 11 | 插光纤、LOID 注册 | 5 min | — |
+| 11 | 插光纤、LOID 注册（跳注册页见 14.1） | 5 min | — |
 | 12 | 备份一份干净配置 | 2 min | — |
 
 **时间线提醒**：第 8 步复位之后到第 10 步之前，是所谓的**"黄金 10 分钟"**——此时设备是干净默认库、
@@ -471,12 +471,105 @@ IPv6 的 RA DNS 由运营商下发、光猫改不动，只在客户端上覆盖 
 
 1. 插回光纤，等 PON 灯常亮（约 30 秒）；
 2. 浏览器打开 `http://192.168.1.1/`，用你的超密登录；
-3. 如有注册页，填 **LOID**（联通给的宽带识别码），点注册；
-4. 看到 `Status=0`、`Result=1` 即注册完成，PPPoE 会自动拨上。
+3. 注册页填 **LOID**（联通给的宽带识别码，24 位以内），密码留空或按当地要求填，点注册；
+4. 页面每 4 秒轮询一次进度，成功标志是 `Status=0`、`Result=1`，随后 PPPoE 自动拨上。
 
-注册成功后运营商可能会下发业务模板（多出 TR069 等 WAN 行）。因为我们在第 11 步已经把
-`Tr069Enable` 关了，正常情况下它**改不动**你的配置；如果发现 WAN 列表突然变多、
-端口绑定冒出一堆没配过的行，说明下发通道又开了，按 [post-flash-runbook.md §3](post-flash-runbook.md) 断掉再恢复备份。
+注册页的判定只有一句：`Status=="0" && Result=="1"` 才算「已注册」，其余一律回到 LOID 表单。
+没注册成功时 `PDTCTUSERINFO` 里是 `Status=99 Result=99`。
+
+---
+
+### 14.1 一直跳 LOID 注册页怎么办（有线、WiFi 都跳）
+
+**现象**：插网线也好、连 WiFi 也好，打开 `192.168.1.1` 就被强制跳到 LOID 注册页，
+输超密登录后也进不了管理界面，改哪个口、换哪台电脑都一样。
+
+**原因**：这**不是**网络问题，跟 LAN 口绑定、WiFi、路由都没有关系。
+拦截在 httpd 这一层，是全局的：
+
+```
+register.gch 的逻辑：
+  Status == "0" && Result == "1"  →  输出「已注册成功，无需再注册。」
+  否则                            →  渲染 LOID 表单；登录后 redirect 到注册页
+```
+
+所以「换有线 / 换 WiFi / 换浏览器 / 清 cookie」全都没用，因为判定值不合格。
+设备只是认为自己**没注册**，把 web 入口锁死了。
+
+**解法：三条 set 把注册状态写成「已完成」，再 save + 同步备份 + 重启。**
+
+```
+sendcmd 1 DB set PDTCTUSERINFO 0 Status 0
+sendcmd 1 DB set PDTCTUSERINFO 0 Result 1
+sendcmd 1 DB set PDTCTUSERINFO 0 AutoRegFlg 0
+sendcmd 1 DB save
+cp /userconfig/cfg/db_user_cfg.xml /userconfig/cfg/db_backup_cfg.xml
+reboot
+```
+
+三条 set 各自的作用，少一条都不行：
+
+| 命令 | 作用 | 少写的后果 |
+|---|---|---|
+| `Status 0` | 注册状态=成功 | 判定不通过，照旧跳 |
+| `Result 1` | 注册结果=成功 | 判定不通过，照旧跳 |
+| `AutoRegFlg 0` | 关掉开机自动注册 | 重启后被自动改回 `99/99`，白干 |
+
+后面两条同样不能省：
+
+| 命令 | 作用 | 少写的后果 |
+|---|---|---|
+| `DB save` | 把内存 DB 落盘到 `db_user_cfg.xml` | 重启后改动全丢 |
+| `cp ... db_backup_cfg.xml` | 同步备份文件 | `DB save` **只写** `db_user_cfg.xml`，重启时被 backup 回滚，一样全丢 |
+| `reboot` | 让 httpd 重新加载 | **改完 DB 网页不会立刻变**，因为 httpd 缓存了 `OBJ_USER_REGISTER` 运行态对象，kill httpd 重启也没用，必须整机重启 |
+
+**验证（三条都实测过）：**
+
+1. 命令行直接问注册页：
+   ```bash
+   curl -s "http://192.168.1.1/register.gch"
+   ```
+   期望只返回一句中文：**`已注册成功，无需再注册。`** —— 没有 LOID 输入框、没有表单。
+2. 复查数据库：
+   ```
+   sendcmd 1 DB p PDTCTUSERINFO
+   ```
+   期望 `Status=0`、`Result=1`、`AutoRegFlg=0`。
+3. **重启后再查一遍**。值仍是 `0/1/0` 才算真的固化住；如果变回 `99/99`，说明 `AutoRegFlg`
+   没写进去，或者 `db_backup_cfg.xml` 没同步。
+
+**三个坑（都是踩过的）：**
+
+| 坑 | 现象 | 正解 |
+|---|---|---|
+| 改完 DB 不重启 | 命令执行成功，网页照旧跳 | 必须 `reboot`，httpd 只认启动时加载的那份 |
+| 只 `DB save` 不同步 backup | 重启后一切回滚 | 手补 `cp db_user_cfg.xml db_backup_cfg.xml` |
+| 只改 `CheckRegistEnable 0` | 注册页纹丝不动 | 判定值是 `Status`/`Result`，`CheckRegistEnable` 只管注册按钮是否可点 |
+
+**副作用，改之前要知道：**
+
+- 这等于把**本地注册入口关掉了**。以后真要重新做 LOID 注册，先改回来再重启：
+  ```
+  sendcmd 1 DB set PDTCTUSERINFO 0 Status 99
+  sendcmd 1 DB set PDTCTUSERINFO 0 Result 99
+  sendcmd 1 DB set PDTCTUSERINFO 0 AutoRegFlg 1
+  sendcmd 1 DB save
+  cp /userconfig/cfg/db_user_cfg.xml /userconfig/cfg/db_backup_cfg.xml
+  reboot
+  ```
+- 它只骗过**本地网页的跳转判定**，不改变 OLT 侧的真实注册状态。如果 PON 灯还在闪
+  （物理层没注册上），网页不跳了，网照样上不了 —— 这时候该查的是光纤和 LOID，不是这条命令。
+- 表里的 `UserName` 是你提交过的 LOID / 宽带账号（本机是 `H300340046`），留空说明从没提交成功过。
+
+---
+
+### 14.2 注册后运营商下发覆盖配置
+
+注册成功后运营商可能下发业务模板（多出 TR069 等 WAN 行）。因为我们在第 11 步已经把
+`Tr069Enable` 关了、`AutoRegFlg` 也置 0，正常情况下它**改不动**你的配置。
+
+如果发现 WAN 列表突然变多、端口绑定冒出一堆没配过的行、或者 IPTV 突然不能看了，
+说明下发通道又开了，按 [post-flash-runbook.md §3](post-flash-runbook.md) 断掉再恢复备份。
 
 ---
 
@@ -526,6 +619,9 @@ python tools\backup_restore.py 192.168.1.1 root 12345 restore backups\<日期>\d
 | 域名解析全变成 192.168.1.1 | 运营商 UDP DNS 劫持 → 第 13.3 节 |
 | 过几天配置自己变了 | TR069 还开着 → 关掉再恢复备份 |
 | 网页点确定报「当前操作无效」 | 手改过 WAN 行、索引没重建 → 用 `restore_base.py` 以原厂备份为基底重做 |
+| **有线 / WiFi 打开就跳 LOID 注册页** | `PDTCTUSERINFO` 不是 `0/1` → 第 14.1 节，三条 set + cp + 重启 |
+| 改完注册状态、重启还是跳 | `AutoRegFlg` 没置 0，或没 `cp` 到 `db_backup_cfg.xml` → 第 14.1 节 |
+| 注册页不跳了但网还是不通 | 命令只改本地判定，PON 没注册上照样不通 → 查 PON 灯与 LOID |
 
 更多坑位记录见仓库 README 的**附录 A**（七个大坑）与**附录 B**（杂项速查）。
 
