@@ -7,6 +7,24 @@
 > 整理成文以便后来者少踩坑。恩山相关帖子给出了方向，但**关键细节（uboot 必须刷、账户表行号、
 > telnet 获取方式、固件包结构）在实机验证前都是空白或以讹传讹**，本仓库逐一补全。
 
+> 📖 **照着做请看 [docs/full-flow.md](docs/full-flow.md)** —— 完整实操流程：
+> 刷机 → 复位 → 固化账户 → 四条 WAN / IPv6 / IPTV 4 口 / WiFi / GPON-XGPON → 验收清单。
+> 本文（README）讲**原理与坑位**，full-flow 讲**操作步骤**。
+
+## 快速索引
+
+| 你想做的事 | 看哪 |
+|---|---|
+| 从零开始照着做一遍 | [docs/full-flow.md](docs/full-flow.md) |
+| PPPoE 的 VID 填在哪里 | [坑 A](#坑-a--业务下发的-internet-wan-没有-vid) |
+| IPv6 怎么开 | [坑 D](#坑-d--ipv6-不开就是半双栈开了才拿到前缀) |
+| IPTV 怎么接 / 4 口怎么配 | [坑 E](#坑-e--iptv-是桥接--只绑-lan44-口全通要另配-vlan-绑定) |
+| WiFi 密码是哪个 | [坑 F](#坑-f--wifi-的密钥14是-wep-槽位不是生效口令) |
+| 能不能切 XGPON | [坑 G](#坑-g--gpon--xgpon设备支持--运营商给你-xgpon) |
+| 网页字段 id 对照 | [full-flow.md §关键 id 对照表](docs/full-flow.md#关键-id-对照表网页自动化用) |
+| 完整配置留档 | [docs/config-snapshot-2026-10-31.md](docs/config-snapshot-2026-10-31.md) |
+
+
 ## 最终成果
 
 | 项目 | 刷机前 | 刷机后 |
@@ -15,7 +33,7 @@
 | 管理界面 | 移动版 | 联通版 `unicom.html` |
 | 超级管理员 | CMCCAdmin / aDm8H%MdA | **CUAdmin / CUAdmin** |
 | 地区码 | 410（广东，移动式编码） | **306（重庆，联通式编码）** |
-| telnet | 工厂模式工具临时开启 | 同左（本机固件 sendcmd 固化无效，见[坑 3](#常见坑)） |
+| telnet | 工厂模式工具临时开启 | 同左（本机固件 sendcmd 固化无效，见[坑 3](#常见坑实战踩过的)） |
 | 备用分区 | 移动 V3.0.6P3N4 | 保留（天然"后悔药"，可 `switchver` 切回移动） |
 
 ## ⚠️ 免责声明
@@ -30,6 +48,7 @@
 ```
 ├── README.md                  # 本文档
 ├── docs/
+│   ├── full-flow.md           # ★ 完整实操流程（照着做一遍）
 │   └── config-snapshot-*.md   # 网页抓取的全量配置快照（只读留档/可复现参考）
 ├── tools/                     # 自研工具脚本（纯 Python，零第三方依赖）
 │   ├── telnet_session.py      # telnet 自动化会话（Windows 下批量执行命令/抓输出）
@@ -39,6 +58,11 @@
 │   ├── cdp.py                 # 零依赖 CDP 客户端（纯标准库 WebSocket + JSON-RPC）
 │   ├── zte_ui.py              # 网页操作助手（Playwright 接管本机 Edge：登录/查状态/配 WAN）
 │   ├── zte_snapshot.py        # 全量配置快照抓取（状态/基本配置/高级配置/设备管理）
+│   ├── recover_after_reset.py # 复位后自助恢复（开 telnet / 固化账户 / 关 TR-069）
+│   ├── probe_live.py          # 实机取证：逐条 WAN / 绑定设置 / RA / 上行方式
+│   ├── probe_live2.py         # 实机取证：LAN 二级菜单 / WLAN 双频 / IPTV 详情
+│   ├── probe_live3.py         # 实机取证：原始字段值（select 真实 value、id 映射）
+│   ├── probe_html.py          # 关键页面原始 HTML dump（分析 JS 联动逻辑）
 │   └── extract_firmware.py    # 联通固件包拆解（切出 kernel / uboot 镜像）
 ├── firmware/
 │   ├── kernel_p1n4.bin        # 联通 kernel 镜像  44,695,552 字节  MD5 b00edea2bac30985305df345d0b876cb
@@ -55,9 +79,11 @@
     └── MD5SUMS.txt
 ```
 
-> `zte_ui.py` / `zte_snapshot.py` 需要 `pip install playwright`（**只装 Python 包**，
+> `zte_ui.py` / `zte_snapshot.py` / `probe_*.py` 需要 `pip install playwright`（**只装 Python 包**，
 > 直接用系统已装的 Edge/Chrome，不用 `playwright install` 下载内核）。
 > 内网/断网环境可改用 `tools/cdp.py`（零依赖，自己实现 WebSocket）。
+> `probe_*.py` 用 `p.chromium.launch(channel="msedge")` **直接起浏览器**，
+> 不需要事先开 `--remote-debugging-port`——比 `connect_over_cdp` 省事。
 
 原始完整升级包（53MB，HavingFun 重打包版）见[参考链接](#参考链接)，可用 `tools/extract_firmware.py` 自行拆解出上述两个镜像。
 
@@ -361,6 +387,16 @@ python tools/zte_snapshot.py docs/config-snapshot-2026-10-31.md   # 抓全量配
 
 > `tools/cdp.py` 是零依赖的 CDP 客户端（纯标准库实现的 WebSocket + JSON-RPC），
 > 断网环境也能用；`tools/zte_ui.py` / `tools/zte_snapshot.py` 改用 Playwright 写。
+>
+> **不想先起调试端口**：直接用 `tools/probe_live.py` 等取证脚本，它们内部
+> `p.chromium.launch(channel="msedge")` 自己起浏览器，一条命令跑完就退出：
+>
+> ```bash
+> python tools/probe_live.py  .temp/probe1.txt   # 逐条 WAN / 绑定设置 / RA / 上行方式
+> python tools/probe_live2.py .temp/probe2.txt   # LAN 二级菜单 / WLAN 双频 / IPTV 详情
+> python tools/probe_live3.py .temp/probe3.txt   # 原始字段值（select 真实 value、id 映射）
+> python tools/probe_html.py                    # 关键页面原始 HTML dump
+> ```
 
 ## 页面结构（不摸清就会点错地方）
 
@@ -375,8 +411,18 @@ python tools/zte_snapshot.py docs/config-snapshot-2026-10-31.md   # 抓全量配
 - 光猫**只允许一个活动会话**：新开标签页会把旧会话挤掉，全程复用一个 page 对象。
 - 桥接/改封装类型后，NAT、MTU 等区块会整块 `display:none`，Playwright 的 `fill()` 会超时；
   用 `evaluate` 直接改 `checked` / `value` 绕过。
+- **「上行线路配置」页的下拉框默认停在"新建WAN连接"**。不先选中具体连接，
+  表单里全是新建默认值（untag / VLAN 空 / IPv4），**用它核对配置会得出错误结论**。
+  正确做法：`select` 选 `IGD.WD1.WCD3.WCPPP1`（INTERNET）等实际值，等 2.5 秒让 AJAX 回填，再读。
+- 网页校验只在 **VLAN 模式 = 改写(tag)（`Frm_WBDMode`=2）** 时才校验并接受 VLAN ID，
+  源码见 `wan_conf.html`：`if ("2" == getValue("Frm_WBDMode")) { Check_IntegerRange(vlan,1,4094,"Frm_VLANID",...) }`。
 
-## 三个真正卡住人的坑
+> 完整的网页 id 对照表（`Frm_VLANID` / `Frm_KeyPassphrase` / `Frm_LANMode` 等）见
+> [full-flow.md § 关键 id 对照表](docs/full-flow.md#关键-id-对照表网页自动化用)。
+
+## 七个真正卡住人的坑
+
+> A~C 是刷完固件必踩的，D~G 是手动配业务时的四个高频误解（2026-10-31 实机复核后新增）。
 
 ### 坑 A · 业务下发的 INTERNET WAN 没有 VID
 
@@ -390,16 +436,51 @@ LOID 注册成功后，ITMS 会下发业务模板，本例生成：
 `2_INTERNET_R_VID_` 的 **VID 后缀为空 = VLAN ID 没写进去**（对照 TR069 那条的 `VID_3600`）。
 症状是 PPPoE 一直"连接ISP服务器超时"、IP 全 0.0.0.0。
 
-解法（网页：基本配置 → 上行线路配置 → 选中该连接）：
+#### VID 到底填在哪：下拉框不选连接，就看不到 VLAN ID
 
-| 项 | 值 |
-|---|---|
-| VLAN 模式 | **改写(tag)**（不是"不启用(untag)"） |
-| VLAN ID | **48** |
-| 802.1p | 0 |
-| 用户名/密码 | `clan2301317426` / `687708`（用户名业务侧已填好，密码要自己补） |
+> **实测修正（2026-10-31）**：很多人打开"上行线路配置"发现 **VLAN ID 是空的**，
+> 就以为"这个固件没地方填 VID"。真相是——**页面默认停在"新建WAN连接"，
+> 那个表单的 VLAN ID 本来就是空的**。必须先在下拉框里选中已有连接，表单才会回填真实值。
 
-改完连接名会变成 `2_INTERNET_R_VID_48`，点「修改」下发，再点「连接」。
+操作路径（每一步都必要）：
+
+```
+基本配置 → 上行线路配置
+  ① 下拉框（默认"新建WAN连接"）→ 选中 2_INTERNET_R_VID_
+  ② 表单里"VLAN 模式" → 选 改写(tag)          ← 不选这个，VLAN ID 字段是灰的
+  ③ "VLAN ID" → 填 48                          ← 这一栏才是 VID
+  ④ "802.1p" → 0
+  ⑤ 用户名/密码 → 业务侧给的用户名 + 你自己的密码
+  ⑥ 点「修改」下发 → 连接名变成 2_INTERNET_R_VID_48 → 点「连接」
+```
+
+> 网页校验逻辑在 `wan_conf.html` 里：`if ("2" == getValue("Frm_WBDMode")) { Check_IntegerRange(vlan,1,4094,"Frm_VLANID",...) }`
+> —— **只有 VLAN 模式 = 改写(tag)（value=2）时才校验并接受 VLAN ID**。
+> 填完记得点「修改」下发，光填不点不会生效。
+
+#### 实机当前真实配置（联通 V3.0.5P1T1 / 重庆 306，2026-10-31）
+
+| 字段 | id | 值 |
+|---|---|---|
+| VLAN 模式 | `Frm_WBDMode` | `改写(tag)`（value=2） |
+| VLAN ID | `Frm_VLANID` | `48` |
+| 802.1p | — | 0 |
+| 用户名 | `Frm_UserName` | `clan2301317426`（业务侧下发，密码在 DB 里是 `******` 读不出，需自己补） |
+| MTU | `Frm_MTU` | 1480 |
+| IP 协议版本 | `Frm_protocol` | `IPv4/v6`（value=3） |
+| 端口绑定 | — | LAN1/LAN2/LAN3 = 是，LAN4 = 否 |
+| 启用 NAT | — | 是（全对称型） |
+
+三条 WAN 的真实参数（同一页面分别选中可看到）：
+
+| 连接 | 封装 | 模式 | 业务类型 | VLAN 模式 | VLAN ID | 端口绑定 |
+|---|---|---|---|---|---|---|
+| `1_TR069_R_VID_3600` | IPoE | 路由 | TR069 | 改写(tag) | 3600 | PON 侧由 VLAN 绑定表管 |
+| `2_INTERNET_R_VID_48` | PPPoE | 路由 | INTERNET | 改写(tag) | 48 | LAN1/2/3 |
+| `3_IPTV_B_VID_3185` | IPoE | **桥接** | IPTV | 改写(tag) | 3185 | **仅 LAN4** |
+
+> ⚠️ **别用"新建WAN连接"表单来核对配置**——它的默认值（untag、VLAN 空、IPv4、MTU 1480）
+> 和任何真实连接都不一样，用它做对照会得出错误结论。核对一律用下拉框选中具体连接。
 
 ### 坑 B · 运营商 UDP DNS 被伪解析器劫持
 
@@ -430,6 +511,147 @@ aa=1（权威位）  TTL=0  随机不存在的域名也返回 192.168.1.1
 1. `tools/zte_snapshot.py` 抓全量配置快照（Markdown），作为可复现的留档；
 2. 真要二进制备份，就得重新开 telnet——但**业务下发之后 `factorymode/nE%jA@5b` 会稳定 401**，
    只在"硬复位后的默认配置"下有效（见 Step 9.5）。
+
+### 坑 D · IPv6 不开就是"半双栈"，开了才拿到前缀
+
+> 实测（2026-10-31，联通 V3.0.5P1T1 / 重庆 306）：IPv6 **其实是开着的**，
+> 但有三处必须同时到位，缺一处就表现为"IPv6 有地址但上不了网"或"客户端拿不到地址"。
+
+**① WAN 侧：IP 协议版本必须选 `IPv4/v6`**
+
+> 上行线路配置 → 选中 `2_INTERNET_R_VID_48` → 「IP 协议版本」→ `IPv4/v6`
+> （select id = `Frm_protocol`，value=3）。选成纯 IPv4 则 PPP 会话只协商 IPv4，
+> RA 前缀不会下发。
+
+**② 前缀来自 DHCPv6-PD 委派，不是静态**
+
+状态 → 网络侧信息 → **IPv6 WAN连接信息**，本机实测：
+
+```
+PPP                 2_INTERNET_R_VID_48
+GUA获取方式          SLAAC           ← 前 64 位靠 SLAAC 自动生成
+GUA                  2408:8262:7e59:2219:d2dd:7cff:fe85:953f
+前缀获取方式          DHCPv6          ← 运营商委派的是整个 /64
+获取前缀             2408:8262:7e59:5045::/64
+网关获取方式          PPP
+连接状态             连接
+```
+
+「基本配置 → 前缀管理」里能看到委派记录：
+`前缀 2408:8262:7e59:5045::/64，来源 PrefixDelegation，有效期 3600/3600，下发方式 RA/DHCPv6`。
+
+**③ LAN 侧 RA + DHCPv6 都要开**
+
+| 页面 | 字段 | 实测值 |
+|---|---|---|
+| LAN配置 → RA配置 | 使能 | **是**（最小等待 200s / 最大等待 600s，M=否 / O=是） |
+| LAN配置 → DHCPv6配置 | 启动 DHCP 服务 | **是**（网关地址 `fe80::1/64`，DNS刷新 86400s） |
+| LAN配置 → DHCPv6配置 | LAN 侧 DNS 获取方式 | **HGWProxy**（家庭网关代理） |
+
+> RA 的 **O 标志**（Other configuration，DHCPv6 里的额外选项）设成"是"，
+> 客户端才能拿到除 DNS 之外的其他 IPv6 选项。
+
+**验证**：客户端能 ping 通 `2400:3200::1`（阿里 IPv6 DNS）即说明 IPv6 通。
+
+> ⚠️ **IPv6 的 DNS 不要用联通下发的**——见坑 B。IPv6 侧 RA 发的 DNS 是运营商下发的，
+> 改不动（RA 由运营商控制）。要绕开就在**客户端**上手动配 `2400:3200::1` /
+> `2606:4700:4700::1111`，不要指望光猫侧能改。
+
+### 坑 E · IPTV 是桥接 + 只绑 LAN4，"4 口全通"要另配 VLAN 绑定
+
+> 实测：ITMS 下发的 `3_IPTV_B_VID_3185` 是 **桥接(BRIDGE) + IPoE + VLAN 3185**，
+> **端口绑定只有 LAN4 = 是**（LAN1/2/3 = 否）。也就是说机顶盒**只能插 LAN4**。
+
+要让 4 个口都能接 IPTV，走的是「基本配置 → **绑定设置**」里的 **VLAN 绑定**：
+
+```
+绑定设置 → 绑定模式 选「VLAN绑定」（Frm_Mode=1，当前是 0=端口绑定）
+  → 每个 LAN 口的 VLAN绑定 输入框填 3185
+  → PON 侧的 VLAN绑定保持 4001/3185,3600/3600（= 4001 透传 3185、3600 透传 3600）
+```
+
+当前「绑定设置」实测值：
+
+| 端口 | 绑定模式 | VLAN 绑定 |
+|---|---|---|
+| LAN1 / LAN2 / LAN3 / LAN4 | 端口绑定 | （空） |
+| PON | VLAN绑定 | `4001/3185,3600/3600` |
+| SSID1~SSID7 | 端口绑定 | （空） |
+| SSID8 | VLAN绑定 | `4001/3185,3600/3600` |
+
+> **端口绑定 vs VLAN 绑定**：
+> - 「端口绑定」= 某条 WAN 只走某几个物理 LAN 口（当前 INTERNET 占 LAN1/2/3，IPTV 占 LAN4）。
+> - 「VLAN 绑定」= 按 VLAN 标记载体，**同一个口可以同时跑多业务**（上网 + IPTV + TR-069 互不干扰）。
+>
+> 想让 4 个口都能同时上网和看 IPTV，必须用 VLAN 绑定，把每个 LAN 口的 VLAN 列表写成
+> `48,3185,3600` 这类组合，然后 WAN 侧对应连接也必须是**桥接**模式。
+> **只把 IPTV 端口绑到 LAN4 而不动 VLAN 绑定，机顶盒插 LAN1 是收不到 IPTV 流的。**
+
+### 坑 F · WiFi 的"密钥1~4"是 WEP 槽位，不是生效口令
+
+> 实测（2.4G 与 5G 一致）：
+>
+> | 字段 | id | 值 |
+> |---|---|---|
+> | SSID 名称 | `Frm_ESSID` | 2.4G `G7615_2G` / 5G `G7615_5G` |
+> | 认证方式 | `Frm_Authentication` | `WPA/WPA2-PSK` |
+> | **WPA 预共享密钥（生效口令）** | `Frm_KeyPassphrase` | **`g7615av5`** |
+> | WPA 加密算法 | `Frm_WPAEncryptType` | `AES` |
+> | 密钥长度 | `Frm_WEPEncryptionLevel` | 64bit |
+> | 当前密钥 | `Frm_WEPKeyIndex` | 1 |
+> | 密钥1~4 | `Frm_WEPKey0~3` | `11111` / `22222` / `33333` / `44444` ← **WEP 密钥槽，WPA 模式下不生效** |
+> | 双频合一 | `Frm_SSIDCombine` | 否 |
+> | 访客网络 | — | 关 |
+>
+> **生效密码是 `g7615av5`**。界面上那四个"密钥1~4"是 WEP 的轮换密钥槽
+> （对应 `WEPKey0~3`，DB 里存的是 base64 密文），认证方式为 WPA/WPA2-PSK 时完全不参与认证。
+>
+> 实际使用的还有 `KeyPassphrase`（DB 密文 `Emk85AK+Bu95aW3jsNNONg==`），
+> 页面上的 `Frm_KeyPassphrase` 是它的明文回填。**改密码只改 `Frm_KeyPassphrase` 即可。**
+>
+> 2.4G 改密码时若勾了"双频合一"，页面会弹窗问是否同步改 5G——
+> 本机 `Frm_SSIDCombine`=否，所以 2.4G/5G 是**两个独立口令**（当前恰好相同）。
+
+### 坑 G · GPON / XGPON：设备支持 ≠ 运营商给你 XGPON
+
+> 实测：状态 → 设备信息 显示 **上行方式 = GPON**；
+> 「设备管理 → 上行方式」页 `Frm_LANMode` 当前值 = **1（1G/XG 自适应）**，可选值：
+
+| value | 选项 | 说明 |
+|---|---|---|
+| 1 | 1G/XG 自适应 | **当前**。GPON/XGPON 都支持，与 OLT 自动协商 |
+| 2 | GPON | 强制 2.5G GPON |
+| 4 | XGPON | 强制 10G XGPON |
+| 49~52 | 网口1~网口4 | 电口回传模式（配合 GPON 上行做网口备份） |
+
+#### 能不能切 XGPON？——技术上能，**但决定权在联通局端**
+
+XGPON 是**物理层标准**：局端（OLT/ONU 汇聚侧）必须发出 XGPON 光谱（1577nm 下行/1490nm 上行），
+光猫切成 XGPON 而局端还是 GPON，结果是**光模块收不到信号 → PON 掉线 → 完全失联**。
+
+| 情况 | 切 XGPON 的结果 |
+|---|---|
+| 联通给你开的是 GPON（绝大多数家庭宽带） | ❌ PON 断开，光猫失联，只能物理复位 |
+| 联通给你开的是 XGPON（千兆+ 的新套餐/政企） | ✅ 可切，网口协商到 10G |
+| 保持 1G/XG 自适应 | ✅ **最优解**，跟局端走，不用赌 |
+
+**判断当前是哪种**：看「状态 → 网络侧信息 → 上行接口信息」里的
+**GPON状态 = 认证成功** 和光功率（实测输入 -15.6dBm / 输出 2.3dBm，均在参考值内）；
+再上网查该套餐的接入制式。**只要网页能进、PPPoE 能拨号，就是 GPON 在跑。**
+
+**真要切的操作与回退**（页面提示"业务重启生效"）：
+
+```
+设备管理 → 上行方式 → 模式选择 选 XGPON → 确定 → 设备重启
+```
+
+回退：同样的路径把 `Frm_LANMode` 改回 `1`（1G/XG自适应）再重启。
+**切换是本地操作，局端不改，局端还是 GPON 的话切过去就是失联**——
+所以除非联通明确给你的线路是 XGPON，否则**不要动这个下拉框**。
+
+> ⚠️ 刷完联通固件后本机 `Frm_LANMode` 默认就是 `1`（自适应），这是最安全的状态，
+> 也是为什么状态页显示"上行方式 GPON"——**自适应模式下与局端协商成了 GPON**，
+> 不是设备被限制成了 GPON。
 
 ---
 

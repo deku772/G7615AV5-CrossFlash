@@ -1,0 +1,7 @@
+# 临时工作目录（探针输出、Edge profile、HTML dump）
+.temp/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
