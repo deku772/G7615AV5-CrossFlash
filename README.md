@@ -29,10 +29,16 @@
 
 ```
 ├── README.md                  # 本文档
+├── docs/
+│   └── config-snapshot-*.md   # 网页抓取的全量配置快照（只读留档/可复现参考）
 ├── tools/                     # 自研工具脚本（纯 Python，零第三方依赖）
 │   ├── telnet_session.py      # telnet 自动化会话（Windows 下批量执行命令/抓输出）
+│   ├── unicom_login.py        # 联通版 web 登录器（sha256+动态 token，自带失败限速）
 │   ├── tftp_server.py         # TFTP 分区备份服务器（光猫 tftp -p 推送）
 │   ├── http_file_server.py    # HTTP 固件下发服务器（光猫 wget 拉取，无 32MB 限制）
+│   ├── cdp.py                 # 零依赖 CDP 客户端（纯标准库 WebSocket + JSON-RPC）
+│   ├── zte_ui.py              # 网页操作助手（Playwright 接管本机 Edge：登录/查状态/配 WAN）
+│   ├── zte_snapshot.py        # 全量配置快照抓取（状态/基本配置/高级配置/设备管理）
 │   └── extract_firmware.py    # 联通固件包拆解（切出 kernel / uboot 镜像）
 ├── firmware/
 │   ├── kernel_p1n4.bin        # 联通 kernel 镜像  44,695,552 字节  MD5 b00edea2bac30985305df345d0b876cb
@@ -48,6 +54,10 @@
     ├── ZTElnet26-windows-amd64.exe  # ZTElnet 2.6（恩山 HavingFun）
     └── MD5SUMS.txt
 ```
+
+> `zte_ui.py` / `zte_snapshot.py` 需要 `pip install playwright`（**只装 Python 包**，
+> 直接用系统已装的 Edge/Chrome，不用 `playwright install` 下载内核）。
+> 内网/断网环境可改用 `tools/cdp.py`（零依赖，自己实现 WebSocket）。
 
 原始完整升级包（53MB，HavingFun 重打包版）见[参考链接](#参考链接)，可用 `tools/extract_firmware.py` 自行拆解出上述两个镜像。
 
@@ -237,18 +247,209 @@ reboot
 
 ## Step 9 · 找回超密（重要行号陷阱）
 
-改地区/复位后超密失效？用 **ZTElnet26（方案 A）再开 telnet**（factorymode 凭据不受影响），然后：
+改地区/复位后超密失效？用 **ZTElnet26（方案 A）再开 telnet**，**先查 Level 再改行号**：
 
 ```
-sendcmd 1 DB set DevAuthInfo 0 User CUAdmin     # ★★ Row 0 才是超管行！
-sendcmd 1 DB set DevAuthInfo 0 Pass CUAdmin
+sendcmd 1 DB p DevAuthInfo        # 看哪一行 Level=2（2=超管，1=普通）
+```
+
+实机（联通 V3.0.5P1N4 + 地区 306）验证结果与常见教程**相反**：
+
+| Row | Level | 角色 |
+|---|---|---|
+| 0 | 1 | 普通用户（user） |
+| 1 | **2** | **超级管理员（CUAdmin）** |
+| 2~5 | 0 | 未启用 |
+
+```
+sendcmd 1 DB set DevAuthInfo 1 User CUAdmin     # ★ 本固件超管在第 1 行（Level=2）
+sendcmd 1 DB set DevAuthInfo 1 Pass CUAdmin
+sendcmd 1 DB set DevAuthInfo 0 User user        # 第 0 行是普通用户
+sendcmd 1 DB set DevAuthInfo 0 Pass <普通密码>
 sendcmd 1 DB save
-reboot
 ```
 
-> **Row 1 是普通用户行**（user 账号），改它对超密毫无作用——这是实战中反复"改了不生效"的元凶。
+> 改错行的典型症状：命令全部回 OK、`DB save` 也成功，但 web 登录照旧失败。
+> **别信行号，信 Level**。DevAuthInfo 的 User/Pass 在 `p` 输出里是 `******`，看不到原值，
+> 只能覆写——所以"读出原密码"这条路不存在，只能重置成已知值。
 > web 登录 3 次失败会锁定约 60 秒，别连点。
-> （部分新固件地区模板的 row 0/1 语义相反，改完不生效就换行号再试，`sendcmd 1 DB p DevAuthInfo` 看 Level：2=超管。）
+
+
+## Step 9.5 · 死锁态自救（web 超密未知 + telnet 关闭）
+
+现象组合：`sdefconf` 改写超密 → ITMS 又下发一次 → 忘了/从未知道超密，同时 23 端口关闭、
+ZTElnet26 报 401。此时**没有任何软件路径能进去**，只能物理硬复位。实机诊断值（可作为状态判断依据）：
+
+| 观测点 | 正常/已注册 | 死锁态 |
+|---|---|---|
+| `GET /` 页面内 `var Status / var Result` | `0 / 1` | `99 / 99`（注册态丢失或未完成） |
+| `GET /register.gch` 内 `RxPower/TxPower` | -15.5 dBm / 1.97 dBm = 光路正常 | 同上（光没问题，别怀疑光纤） |
+| `POST /` 登录失败后响应 | 含 `var Lognumber = N;` | `N` 递增，≥3 锁 60s |
+| `GET /tr069_registering.gch` | 只有 3 秒 meta refresh，**不是全站劫持** | 任意路径仍返回正常 404 |
+| `ZTElnet26 -m <电脑MAC>` | 打印临时账号 | `http code err 401` |
+
+### 复位后的"黄金 10 分钟"（顺序不能错，光纤必须还没插）
+
+```
+① 拔光纤 → 顶 reset ≥60s（等 4 个网口灯同时闪/灭）→ 松手
+② 立刻用 ZTElnet26 开 telnet（干净库下 factorymode 必过）——★ 别先试 CUAdmin
+③ 用 telnet 覆写 DevAuthInfo（Row1=超管），顺手改 WiFi、关 TR-069
+④ 手动建 WAN（internet / iptv 两条，见下）
+⑤ 最后才插回光纤 → register.gch 填 LOID → 观察 Status 变 0 / Result 变 1
+```
+
+> **★ 实机修正：硬复位并不会把 web 超密还原成 `CUAdmin/CUAdmin`。**
+> 联通 V3.0.5P1N4 + 地区 306 的默认库里超密是**按机随机**的，复位后第一个能进的门
+> 是 factorymode（telnet），不是 web。实测序列：复位后 `CUAdmin` 登录 → `Lognumber=1` 失败；
+> 同一时刻 `ZTElnet26` 直接开出临时账号。**先开 telnet，再用 telnet 改 web 密码**，顺序反了会白等。
+
+```bash
+# ③ 开 telnet（-m 用本机有线网卡 MAC，无冒号）
+third_party/ZTElnet26-windows-amd64.exe -i 192.168.1.1 -m <电脑MAC> -p 80 -u factorymode -pw "nE%jA@5b"
+```
+
+```
+# ③ 固化两个账户（本固件 Row1=超管 Level2 / Row0=普通 Level1；先 p 一遍确认 Level）
+sendcmd 1 DB p DevAuthInfo
+sendcmd 1 DB set DevAuthInfo 1 User CUAdmin
+sendcmd 1 DB set DevAuthInfo 1 Pass <你的超密>
+sendcmd 1 DB set DevAuthInfo 0 User user
+sendcmd 1 DB set DevAuthInfo 0 Pass <你的普通密码>
+# 关掉 ACS，避免插光纤后再次被下发覆盖（表名以本机 p MgtServer 结果为准）
+sendcmd 1 DB set MgtServer 0 URL ""
+sendcmd 1 DB set MgtServer 0 PeriodicInformEnable 0
+# 更彻底：连 TR069 那条 WAN 一起停掉，防止 DHCP option 43 把 ACS 地址又塞回来
+sendcmd 1 DB set WANC 0 Enable 0
+sendcmd 1 DB set WANC 1 Enable 0
+sendcmd 1 DB save
+```
+
+> 顺序的关键：**先断管理通道，再入网**。只要 ACS 还通，插回光纤后的首次上线依旧会把
+> DevAuthInfo / SSID / WAN 全部重写一遍，前面所有手工配置等于白做。
+> 仅清空 URL 不够——联通侧常用 DHCP option 43 做 ACS 发现，URL 会被重新填回；
+> 停掉 TR069 的 WAN（本例是 VLAN 3600 的两条 `*_TR069_*`）才算真断。
+
+### 登录脚本（已按本固件页面复刻，可直接验证密码）
+
+```bash
+python tools/unicom_login.py --acct adm --pass CUAdmin --tries 1
+python tools/unicom_login.py --acct oth --pass <普通密码>
+```
+
+> 表单真实字段是 **`Password`**（`id=UserPW` 只是元素 id），提交 `UserPW=...` 会被服务器当无效请求
+> 直接回登录页、且**不报错**——这是早前"401/失败"结论不可信的原因之一。
+
+---
+
+# Step 10 · 全程走网页配置（不碰 telnet 写库）
+
+前置：想让所有改动都发生在厂商 UI 上，就用 Playwright 接管本机已装的 Edge，
+**不需要下载浏览器内核**（`channel=msedge` / 或直接连已有的调试端口）。
+
+```bash
+# ① 用独立 profile 起一个带调试端口的 Edge（不影响日常浏览器）
+"C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe" \
+  --remote-debugging-port=9222 \
+  --user-data-dir="<仓库>/.temp/edgeprof" --no-first-run \
+  --no-default-browser-check http://192.168.1.1/
+
+# ② 脚本通过 CDP 接管它
+python tools/zte_ui.py status        # 看 ONU 注册状态 + WAN 连接
+python tools/zte_ui.py wanlist       # 列 WAN
+python tools/zte_snapshot.py docs/config-snapshot-2026-10-31.md   # 抓全量配置快照
+```
+
+> `tools/cdp.py` 是零依赖的 CDP 客户端（纯标准库实现的 WebSocket + JSON-RPC），
+> 断网环境也能用；`tools/zte_ui.py` / `tools/zte_snapshot.py` 改用 Playwright 写。
+
+## 页面结构（不摸清就会点错地方）
+
+| 层 | 位置 | 说明 |
+|---|---|---|
+| 单页菜单 | `/` 的 `#menu0`~`#menu6` | `onclick="enterFrame('status'|'basic'|'advance'|'devmanager')"` |
+| 框架页 | `unicom.html` | `topFrame` = 菜单（`#mmStatu/#mmNet/#mmAdv/#mmManager`），`mainFrame` = 内容 |
+| 内容页 | `getpage.gch?pid=1002&nextpage=*.gch` | 左侧二级菜单 + 右侧表单，`_SESSION_TOKEN` 藏在 hidden 里 |
+
+- 登录：`GetAccessAccount('adm')` → 填 `#Frm_Password` → 点 `#LoginId`。
+  **不要自己拼 sha256**，`passwordSHA256()` 会在页内算好并写进 `UserPW`。
+- 光猫**只允许一个活动会话**：新开标签页会把旧会话挤掉，全程复用一个 page 对象。
+- 桥接/改封装类型后，NAT、MTU 等区块会整块 `display:none`，Playwright 的 `fill()` 会超时；
+  用 `evaluate` 直接改 `checked` / `value` 绕过。
+
+## 三个真正卡住人的坑
+
+### 坑 A · 业务下发的 INTERNET WAN 没有 VID
+
+LOID 注册成功后，ITMS 会下发业务模板，本例生成：
+
+```
+1_TR069_R_VID_3600   DHCP，VLAN 3600   ← ACS 通道
+2_INTERNET_R_VID_    PPPoE，VLAN 缺失  ← 连接名里 VID 是空的！
+```
+
+`2_INTERNET_R_VID_` 的 **VID 后缀为空 = VLAN ID 没写进去**（对照 TR069 那条的 `VID_3600`）。
+症状是 PPPoE 一直"连接ISP服务器超时"、IP 全 0.0.0.0。
+
+解法（网页：基本配置 → 上行线路配置 → 选中该连接）：
+
+| 项 | 值 |
+|---|---|
+| VLAN 模式 | **改写(tag)**（不是"不启用(untag)"） |
+| VLAN ID | **48** |
+| 802.1p | 0 |
+| 用户名/密码 | `clan2301317426` / `687708`（用户名业务侧已填好，密码要自己补） |
+
+改完连接名会变成 `2_INTERNET_R_VID_48`，点「修改」下发，再点「连接」。
+
+### 坑 B · 运营商 UDP DNS 被伪解析器劫持
+
+联通下发的 DNS（`221.5.203.98` / `221.7.92.98`）在 **UDP** 上会把**任意域名**解析成
+`192.168.1.1`（光猫自己），TCP 查询却返回真实结果。伪解析器特征：
+
+```
+aa=1（权威位）  TTL=0  随机不存在的域名也返回 192.168.1.1
+```
+
+实测可用 / 不可用（UDP）：
+
+| 可用 | 不可用（返回 192.168.1.1） |
+|---|---|
+| `114.114.114.114`、`8.8.8.8`、`2400:3200::1`、`2606:4700:4700::1111` | 联通 `221.5.203.98`/`221.7.92.98`、`119.29.29.29`、`223.5.5.5`、`180.76.76.76` |
+
+光猫侧：基本配置 → LAN配置 → DHCPv4配置 → **DNS来源 = 静态配置**，
+首选 `114.114.114.114`、备选 `8.8.8.8`（IPv6 的 RA DNS 由运营商下发，改不动，
+客户端侧再覆盖 `2400:3200::1` / `2606:4700:4700::1111`）。
+
+> 排查手法：直接用 Python 发 DNS 报文对比 UDP/TCP，比在浏览器里 nslookup 直观得多。
+
+### 坑 C · 网页没有配置导出
+
+设备管理 → 设备管理 → **USB备份配置** 需要 U 盘；「强制推送配置」是推给 ACS 的开关。
+本固件网页**无法导出配置文件**。两个替代方案：
+
+1. `tools/zte_snapshot.py` 抓全量配置快照（Markdown），作为可复现的留档；
+2. 真要二进制备份，就得重新开 telnet——但**业务下发之后 `factorymode/nE%jA@5b` 会稳定 401**，
+   只在"硬复位后的默认配置"下有效（见 Step 9.5）。
+
+---
+
+## DevAuthInfo 的行号：别信行号，信 Level
+
+> **移动和联通固件的行号语义确实可能不同**，网上教程也有把 Row0 当超管的。
+> 唯一可靠的做法是看 `Level` 字段：`sendcmd 1 DB p DevAuthInfo` 里 **Level=2 才是超管**。
+
+本机实测（联通 V3.0.5P1N4 / 重庆区域码）：
+
+| 位置 | Level | 账号 |
+|---|---|---|
+| **Row 1** | 2（超管） | `CUAdmin` |
+| **Row 0** | 1（普通） | `user` |
+
+交叉验证：设备管理 → 用户管理（网页）里，`Username0=user` / `Username1=CUAdmin`，
+`UserRight0=right1`（普通）/ `UserRight1=right2`（管理维护）——两处完全一致。
+
+> `User`/`Pass` 在 `p` 输出里恒为 `******`，**读不出原密码，只能覆写**。
+> web 登录 3 次失败会锁定约 60 秒，别连点。
 
 ---
 
@@ -260,8 +461,11 @@ reboot
    `[0x540000, 0x2AA0000)` 区间是高熵压缩数据（由官方升级程序展开成 rootfs），**直接 kwrite 整段进去
    不含可挂载的 jffs2**——这就是为什么本流程只写 `[0x0, 0x2AA0000)` 的 kernel 段而 rootfs 交给
    联通固件首次启动自建。（实测"联通 kernel 头 + 移动 rootfs 切片"的混合镜像也起不来，别折腾。）
-3. **本固件 sendcmd 固化 telnet 无效**：重启后 23 端口依旧关闭。别浪费时间，ZTElnet26 随时能开，
-   `factorymode/nE%jA@5b` 凭据长期有效。
+3. **本固件 sendcmd 固化 telnet 无效**：重启后 23 端口依旧关闭。ZTElnet26 可以随时开，但
+   **`factorymode/nE%jA@5b` 只在硬复位后的默认配置下有效**——一旦 `sdefconf`/ITMS 下发改写过
+   DevAuthInfo，工厂登录会稳定返回 `http code err 401`（实机复现：MAC 填对也 401），
+   工具 `-h` 里那句 “To enable the default password, please push reset button for 15 seconds”
+   说的就是这个前提。别把 401 当网络问题反复重试。
 4. **web 升级入口被阉割**：移动 V3.0.6 与联通 V3.0.5P1N4 的设备管理菜单里都没有"版本升级"项
    （菜单数据结构里直接缺失，不是隐藏参数能唤出的）。`cu.html?hidden=upgrade` 是更新版本联通固件
    才有的入口。要补刷 osgi 等其他分区，走本流程的 telnet + nand kwrite。
