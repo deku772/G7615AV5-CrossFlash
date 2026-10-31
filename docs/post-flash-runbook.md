@@ -44,14 +44,16 @@ python tools/telnet_session.py 192.168.1.1 <临时用户> <临时密码> "id"
 ```bash
 cat /proc/mtd                      # 分区表，核对 mtd 编号，别照抄别人的
 sendcmd 1 DB p TelnetCfg           # 当前 telnet 状态（Lan_Enable 应为 0）
-sendcmd 1 DB p DevAuthInfo         # web 账户，记下 Level=2 那一行是超管
+sendcmd 1 DB p DevAuthInfo         # web 账户，看清楚哪一行是超管（按 Level 判定，见下注）
 sendcmd 1 DB p MgtServer           # TR069 状态和 ACS 地址
 cat /etc/init.d/regioncode         # 可用地区码
 cat /proc/cpuinfo | grep -i model  # 确认硬件型号
 ```
 
-> ★ **DevAuthInfo 不要信行号，要信 `Level`。** 不同固件行序不同，本机是 Row0=Level1（普通）、
-> Row1=Level2（超管）。认错行改错账户，会出现"改了密码但登不进"。
+> ★ **DevAuthInfo 不要信行号，Level 的数值含义也别背。** 不同固件、不同地区模板都可能不同。
+> 本机 2026-11-01 实测：`Level=1` 那行（`cqadmin`）是**管理维护账号**，`Level=2` 那行（`user`）是普通账号，
+> 与早前记录的"Row1=Level2=超管"**相反**。可靠判定：登录页「管理员账户」入口（`Right=1`）能用谁的密码进去、
+> 且能看到「高级配置」，那一行就是超管。`solidify.py` 的 `--admin-level` 就是为这个准备的（默认 1）。
 
 ### Step 3 · 固化（一次性写好三件事）
 
@@ -62,15 +64,22 @@ cat /proc/cpuinfo | grep -i model  # 确认硬件型号
 | 连接数不卡 | `TelnetCfg.Row0.Max_Con_Num` | `999` |
 | 空闲不断线 | `TelnetCfg.Row0.ExitTime` | `999` |
 | 权限够用 | `TelnetCfg.Row0.InitSecLvl` | `3` |
-| web 超管 | `DevAuthInfo.Row1.User/Pass` | 自定义（Level 必须为 2） |
+| web 超管 | `DevAuthInfo` 里 Level=超管 那行 | 自定义（用 `--admin-level` 指定，默认 1） |
 | **断远程下发** | `MgtServer.Row0.Tr069Enable` | **`0`** |
 
 ★ **`TelnetCfg` 是运行时只读表，`sendcmd 1 DB set` 对它静默无效** —— 必须走"改配置文件再推回"的路径。
 原因和对照实验见 [telnet-solidify.md §二](telnet-solidify.md#二--为什么-sendcmd-1-db-set-无效readme-坑-3-的真正原因)。
 
 ```bash
-# 一键固化（改 TelnetCfg + DevAuthInfo + MgtServer，推回两个文件并重启）
+# 一键固化：TelnetCfg + web 账号 + 关 TR069，推回两个文件并重启
+python tools/solidify.py 192.168.1.1 <临时用户> <临时密码> \
+  --admin <超管名>:<超密> --user <普通名>:<普通密码> --tr069-off --reboot
+
+# 只改 telnet（保持老行为）
 python tools/solidify.py 192.168.1.1 <临时用户> <临时密码>
+
+# 先看要改什么，不碰设备
+python tools/solidify.py 192.168.1.1 <临时用户> <临时密码> --admin a:b --tr069-off --dry-run
 ```
 
 手写的话，核心只有一句：**`db_user_cfg.xml` 和 `db_backup_cfg.xml` 必须同时覆盖，否则重启后被备份文件还原。**
@@ -210,7 +219,7 @@ python tools/backup_restore.py 192.168.1.1 root 12345 restore backups/2026-11-01
 | 改完立刻变回去 | 执行了 `sendcmd 1 DB save` 或 `rreset` | 重推后**只 `reboot`** |
 | `DB set TelnetCfg` 没反应 | 该表运行时只读 | 走配置文件路径 |
 | 网页登录跳到注册页 | LOID 未注册（`Status=99`） | 见 [full-flow.md](full-flow.md) 注册章节 |
-| 改了超密却登不进 | 改错行（信行号没信 `Level`） | 找 `Level=2` 那行 |
+| 改了超密却登不进 | 改错行（把 Level 含义认反了） | 用「管理员账户」入口反推，或换 `--admin-level 2` |
 | 配置过几天自己变了 | TR069 还开着 | 关 `Tr069Enable`，再恢复备份 |
 | 网页点确定报「当前操作无效」 | 手工插过 WAN 行，索引没重建 | 用原厂备份做基底重做 |
 
@@ -223,11 +232,11 @@ python tools/backup_restore.py 192.168.1.1 root 12345 restore backups/2026-11-01
 # 1. 开临时 telnet（ZTElnet26 使能，读出随机账号）
 # 2. 只读巡检
 cat /proc/mtd ; sendcmd 1 DB p TelnetCfg ; sendcmd 1 DB p DevAuthInfo ; sendcmd 1 DB p MgtServer
-# 3. 固化（TelnetCfg + DevAuthInfo + MgtServer.Tr069Enable=0）
-python tools/solidify.py 192.168.1.1 <用户> <密码>
-# 4. 重启并验证两次
-reboot   # 等 50s
+# 3. 固化（TelnetCfg + web 账号 + MgtServer.Tr069Enable=0）
+python tools/solidify.py 192.168.1.1 <用户> <密码> --admin <超管名>:<超密> --user <普通名>:<普通密码> --tr069-off --reboot
+# 4. 等 50~60s 验证两次
 sendcmd 1 DB p TelnetCfg    # Lan_Enable=1 / ExitTime=999 / InitSecLvl=3
+sendcmd 1 DB p MgtServer    # Tr069Enable=0
 # 5. 备份
 python tools/backup_restore.py 192.168.1.1 root 12345 backup
 

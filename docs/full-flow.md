@@ -192,7 +192,7 @@ reboot
 ```
 ① 拔光纤 → 顶 reset ≥60s（等 4 个网口灯同时闪/灭）→ 松手
 ② 立刻用 ZTElnet26 开 telnet（干净库下 factorymode 必过）——★ 别先试 CUAdmin
-③ 用 telnet 覆写 DevAuthInfo（Row1=超管），顺手关 TR-069
+③ 用 telnet 覆写 DevAuthInfo（按 Level 定位，不认行号），顺手关 TR-069
 ④ 手动建 WAN（internet / iptv 两条，见阶段三）
 ⑤ 最后才插回光纤 → register.gch 填 LOID → 观察 Status 变 0 / Result 变 1
 ```
@@ -208,13 +208,25 @@ reboot
 sendcmd 1 DB p DevAuthInfo
 ```
 
-本固件实测语义：**Row 0 = Level 1 = 普通用户（user）**，**Row 1 = Level 2 = 超管（CUAdmin）**。
+**Level 的数值含义不要背，现场判定。** 2026-11-01 在本机（联通 V3.0.5P1N4 / 地区 306）实测：
+`Level=1` 那行（`cqadmin`）才是**管理维护账号**，`Level=2` 那行（`user`）是普通账号——
+与早前记录的"Row1=Level2=超管"**相反**。判定方法：登录页「管理员账户」入口提交 `Right=1`，
+用哪一行的密码能进且能看到「高级配置」，那一行就是超管。
+
+所以推荐直接用脚本（按 Level 改，附 dry-run 可先看要改哪行）：
 
 ```
-sendcmd 1 DB set DevAuthInfo 1 User CUAdmin
-sendcmd 1 DB set DevAuthInfo 1 Pass <你的超密>
-sendcmd 1 DB set DevAuthInfo 0 User user
-sendcmd 1 DB set DevAuthInfo 0 Pass <你的普通密码>
+python tools/solidify.py 192.168.1.1 <telnet用户> <telnet密码> ^
+  --admin <超管名>:<超密> --user <普通名>:<普通密码> --tr069-off --reboot
+```
+
+手写的话（把 `<LV>` 换成你实测出来的超管 Level）：
+
+```
+sendcmd 1 DB set DevAuthInfo <LV> User <你的超管名>
+sendcmd 1 DB set DevAuthInfo <LV> Pass <你的超密>
+sendcmd 1 DB set DevAuthInfo <LV'> User <你的普通名>
+sendcmd 1 DB set DevAuthInfo <LV'> Pass <你的普通密码>
 # 关掉 ACS，防止插光纤后再次被下发覆盖
 sendcmd 1 DB set MgtServer 0 URL ""
 sendcmd 1 DB set MgtServer 0 PeriodicInformEnable 0
@@ -223,6 +235,10 @@ sendcmd 1 DB set WANC 0 Enable 0
 sendcmd 1 DB set WANC 1 Enable 0
 sendcmd 1 DB save
 ```
+
+> ⚠️ 注意上面最后的 `DB save` 会用内存库重写 `db_user_cfg.xml`——如果你**之前用 solidify.py 改过文件**，
+> 先确认内存里的 TelnetCfg 已经是新值（固件脚本末尾会做一次内存重载），否则会把 telnet 固化抹掉。
+> 顺序建议：**先 solidify.py（文件级）→ 再 `DB set` 改零散字段 → 最后 `DB save`**。
 
 > 顺序的关键：**先断管理通道，再入网**。只要 ACS 还通，插回光纤后的首次上线依旧会把
 > DevAuthInfo / SSID / WAN 全部重写一遍，前面所有手工配置等于白做。

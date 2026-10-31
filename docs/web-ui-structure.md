@@ -18,7 +18,7 @@ http://192.168.1.1/            单页菜单 (#menu0 ~ #menu6)
 | `#LoginId` | 登录按钮 | 需先执行 `GetAccessAccount('adm')` 选账户类型 |
 | `#Frm_Loginchecktoken` | 动态令牌 | 每次会话不同，提交前必须从当前页重取 |
 | `UserRandomNum` | 随机数 | 与密码一起做 `sha256(明文 + 随机数)` |
-| `accountType` | `adm` / `oth` | 对应 DevAuthInfo 的 Level2 / Level1 行 |
+| `accountType` | `adm` / `oth` | 提交 `Right=1`（adm）/ `Right=2`（oth），服务端按 DevAuthInfo 的 Level 匹配。本机实测 adm↔`Level=1`、oth↔`Level=2`，与部分教程相反，以现场验证为准 |
 
 登录提交字段（已实测有效）：
 

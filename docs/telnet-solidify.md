@@ -138,11 +138,13 @@ sendcmd 1 DB save
 
 **对策：改完文件后绝对不要执行 `DB save`。**
 
-### 陷阱 2：`sendcmd 1 DB rreset` 同样会覆盖
+### 陷阱 2：`sendcmd 1 DB rreset` 之后别再动文件
 
-`rreset` 让内存 DB 重新加载，落盘文件同样被回滚。
+`rreset` 会让内存 DB 按**磁盘上的文件**重新加载。如果磁盘已经是新文件，这一步是无害的
+（`solidify.py` 末尾就靠它让内存立刻生效）；但如果你还没覆盖好文件就 rreset，
+内存会带着旧值继续跑，随后任何一次 `DB save` 都会把旧值写回磁盘。
 
-**对策：不要用 `rreset`，直接 `reboot`。**
+**稳妥顺序：写文件 → 校验 MD5 → `reboot`。** 想让内存立刻生效才用 `rreset`，且顺序必须在覆盖之后。
 
 ### 陷阱 3：必须同时覆盖 `db_backup_cfg.xml`
 
@@ -166,10 +168,13 @@ sync
 4. printf 转义串写入 /tmp/db_user_cfg.xml.new
 5. cp 到 db_user_cfg.xml  和  db_backup_cfg.xml   （两个都要！）
 6. sync
-7. reboot                                     （不是 rreset，不是 DB save）
+7. reboot                                     （不要 DB save；rreset 可选且必须在 cp 之后）
 8. 等待 ~50 秒，telnet 端口自动打开
 9. root/12345 登录成功 = 固化完成
 ```
+
+> 想确认磁盘写对了、又不想马上重启，可以在 `cp` + `sync` 之后执行一次 `sendcmd 1 DB rreset`：
+> 内存会按新文件重载，随后用 `sendcmd 1 DB p TelnetCfg` 就能看到 `Lan_Enable=1`。但**必须确认 cp 已完成**。
 
 ---
 
@@ -197,13 +202,24 @@ printf '\x...' >> /tmp/db_user_cfg.xml.new
 | `tools/zte_cfg.py` | ★ db_user_cfg.xml ver4 加解密（Python 复刻 zxcfg） |
 | `tools/pull_file.py` | telnet 拉取设备文件（hexdump 传输，设备无 base64） |
 | `tools/push_cfg2.py` | 分步推送配置（push / cp / rreset / check 四个阶段） |
-| `tools/solidify.py` | 一键固化：push → cp 两文件 → MD5 校验 → rreset |
+| `tools/solidify.py` | 一键固化：改 XML → push → cp 两文件 → MD5 校验；可选改 web 账号、关 TR069、直接重启 |
 
 ### 一键固化
 
 ```bash
+# 只固化 telnet
 python tools/solidify.py 192.168.1.1 <telnet用户> <telnet密码>
+
+# 固化 + 改 web 超密/普通账号 + 关 TR069 + 重启
+python tools/solidify.py 192.168.1.1 <telnet用户> <telnet密码> \
+  --admin <超管名>:<超密> --user <普通名>:<普通密码> --tr069-off --reboot
+
+# 只演算不写设备（结果写到 .temp/dryrun.xml，可人工 diff）
+python tools/solidify.py 192.168.1.1 <telnet用户> <telnet密码> --admin a:b --dry-run
 ```
+
+> `--admin-level` 用于指定"哪一级是超管"（默认 `1`）。本机实测 `Level=1` 才是管理维护账号，
+> 与部分教程的 `Level=2` 说法相反——**这个数值别背，改完用「管理员账户」入口验证一次**。
 
 ---
 
