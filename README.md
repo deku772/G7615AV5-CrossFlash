@@ -16,13 +16,17 @@
 | 你想做的事 | 看哪 |
 |---|---|
 | 从零开始照着做一遍 | [docs/full-flow.md](docs/full-flow.md) |
+| **刷机/复位后，用 shell 按顺序做什么** | **[docs/post-flash-runbook.md](docs/post-flash-runbook.md)** |
+| **IPTV 单线复用（一根线跑上网 + IPTV）** | **[docs/iptv-single-line.md](docs/iptv-single-line.md)** |
 | PPPoE 的 VID 填在哪里 | [坑 A](#坑-a--业务下发的-internet-wan-没有-vid) |
 | IPv6 怎么开 | [坑 D](#坑-d--ipv6-不开就是半双栈开了才拿到前缀) |
-| IPTV 怎么接 / 4 口怎么配 | [坑 E](#坑-e--iptv-是桥接--只绑-lan44-口全通要另配-vlan-绑定) |
+| IPTV 为什么只能插一个口 | [坑 E](#坑-e--iptv-是桥接--只绑-lan44-口全通要另配-vlan-绑定) |
 | WiFi 密码是哪个 | [坑 F](#坑-f--wifi-的密钥14是-wep-槽位不是生效口令) |
 | 能不能切 XGPON | [坑 G](#坑-g--gpon--xgpon设备支持--运营商给你-xgpon) |
 | 网页字段 id 对照 | [full-flow.md §关键 id 对照表](docs/full-flow.md#关键-id-对照表网页自动化用) |
 | **完整页面结构（菜单/字段 id/标签页）** | **[docs/web-ui-structure.md](docs/web-ui-structure.md)** |
+| **Telnet 固化（完整逆向 + 实机验证）** | **[docs/telnet-solidify.md](docs/telnet-solidify.md)** |
+| 配置备份 / 回滚 | [post-flash-runbook.md §4](docs/post-flash-runbook.md#4-备份与回滚) |
 | 完整配置留档 | [docs/config-snapshot-2026-10-31.md](docs/config-snapshot-2026-10-31.md) |
 
 
@@ -34,8 +38,10 @@
 | 管理界面 | 移动版 | 联通版 `unicom.html` |
 | 超级管理员 | CMCCAdmin / aDm8H%MdA | **CUAdmin / CUAdmin** |
 | 地区码 | 410（广东，移动式编码） | **306（重庆，联通式编码）** |
-| telnet | 工厂模式工具临时开启 | 同左（本机固件 sendcmd 固化无效，见[坑 3](#常见坑实战踩过的)） |
+| telnet | 工厂模式工具临时开启 | 同左；**固化已实机验证通过**（`root/12345`，重启自启，见 [docs/telnet-solidify.md](docs/telnet-solidify.md)） |
 | 备用分区 | 移动 V3.0.6P3N4 | 保留（天然"后悔药"，可 `switchver` 切回移动） |
+| IPTV 接入 | 只能插运营商指定的那一个口 | **单线复用**：LAN1 做 Trunk，一根线同时跑上网(48) + IPTV(3185)，机顶盒 PPPoE 拨号（[方案](docs/iptv-single-line.md)） |
+| 配置备份 | 网页无导出功能 | `backup_restore.py` 一键备份/回滚，含明文 XML 与密钥（[Runbook §4](docs/post-flash-runbook.md#4-备份与回滚)） |
 
 ## ⚠️ 免责声明
 
@@ -49,26 +55,43 @@
 ```
 ├── README.md                  # 本文档
 ├── docs/
-│   ├── full-flow.md           # ★ 完整实操流程（照着做一遍）
-│   ├── web-ui-structure.md    # ★ Web 界面页面结构交接文档（菜单树/字段 id/标签页/最终配置基线）
-│   └── config-snapshot-*.md   # 网页抓取的全量配置快照（只读留档/可复现参考）
+│   ├── full-flow.md           # ★ 完整实操流程（刷机 → 复位 → 网页配置 → 验收）
+│   ├── post-flash-runbook.md  # ★ 刷机后 shell Runbook（固化顺序 / 验收 / 防覆盖 / 备份回滚）
+│   ├── iptv-single-line.md    # ★ IPTV 单线复用（VLAN 绑定原理 / 位掩码 / 抓包验证 / 排查）
+│   ├── telnet-solidify.md     # ★ Telnet 固化完整逆向（加密算法 / 三个致命陷阱）
+│   ├── web-ui-structure.md    # Web 界面页面结构交接文档（菜单树 / 字段 id / 标签页 / 配置基线）
+│   └── config-snapshot-*.md   # 网页抓取的全量配置快照（只读留档 / 可复现参考）
 ├── tools/                     # 自研工具脚本（纯 Python，零第三方依赖）
-│   ├── telnet_session.py      # telnet 自动化会话（Windows 下批量执行命令/抓输出）
-│   ├── unicom_login.py        # 联通版 web 登录器（sha256+动态 token，自带失败限速）
+│   ├── 【刷机与固件】
+│   ├── extract_firmware.py    # 联通固件包拆解（切出 kernel / uboot 镜像）
 │   ├── tftp_server.py         # TFTP 分区备份服务器（光猫 tftp -p 推送）
 │   ├── http_file_server.py    # HTTP 固件下发服务器（光猫 wget 拉取，无 32MB 限制）
-│   ├── cdp.py                 # 零依赖 CDP 客户端（纯标准库 WebSocket + JSON-RPC）
-│   ├── zte_ui.py              # 网页操作助手（Playwright 接管本机 Edge：登录/查状态/配 WAN）
-│   ├── zte_snapshot.py        # 全量配置快照抓取（状态/基本配置/高级配置/设备管理）
-│   ├── zte_dump_structure.py  # 抓取 Web 界面完整页面结构 → docs/web-ui-structure.md
-│   ├── zte_dump_detail.py     # 补抓关键配置页字段明细（宽带设置/IPv6/绑定/WLAN）
-│   ├── zte_dump_detail2.py    # 补抓 IPTV 明细 / RA+DHCPv6 标签页 / 上行方式选中项
+│   ├── 【telnet 与配置库】
+│   ├── telnet_session.py      # telnet 自动化会话（Windows 下批量执行命令 / 抓输出）
+│   ├── tel_exec.py            # 一条命令内执行多条 telnet 命令并回传原始输出
+│   ├── zte_cfg.py             # ★ db_user_cfg.xml ver4 加解密（Python 复刻 zxcfg）
+│   ├── pull_file.py           # 经 telnet 拉取设备文件（hexdump 传输，设备无 base64）
+│   ├── push_cfg.py            # 生成加密配置并用 printf \xNN 写回设备
+│   ├── push_cfg2.py           # 分阶段推送（push / cp / rreset / check），便于排错
+│   ├── solidify.py            # ★ 一键固化（TelnetCfg + DevAuthInfo + 双文件覆盖）
+│   ├── backup_restore.py      # ★ 配置备份 / 校验 / 回滚（含明文 XML 与 paramtag）
+│   ├── restore_base.py        # 以原厂完整备份为基底注入业务行（绕开 WAN 索引不重建的坑）
+│   ├── inject_pppoe.py        # 把 U 盘备份里的 PPPoE / IPTV 表行注入实时配置
+│   ├── bind_lan_ports.py      # 走「端口绑定」给 IPTV 绑 LAN 口（已被 VLAN 绑定方案取代，留作参考）
 │   ├── recover_after_reset.py # 复位后自助恢复（开 telnet / 固化账户 / 关 TR-069）
-│   ├── probe_live.py          # 实机取证：逐条 WAN / 绑定设置 / RA / 上行方式
-│   ├── probe_live2.py         # 实机取证：LAN 二级菜单 / WLAN 双频 / IPTV 详情
-│   ├── probe_live3.py         # 实机取证：原始字段值（select 真实 value、id 映射）
-│   ├── probe_html.py          # 关键页面原始 HTML dump（分析 JS 联动逻辑）
-│   └── extract_firmware.py    # 联通固件包拆解（切出 kernel / uboot 镜像）
+│   ├── factory_reset.py       # 自动执行「恢复出厂配置」并监控重启回线
+│   ├── fill_ztetelnet.py      # 从 ZTE Telnet 小助手窗口读出随机临时账号
+│   ├── 【网页自动化与取证】
+│   ├── unicom_login.py        # 联通版 web 登录器（sha256 + 动态 token，自带失败限速）
+│   ├── cdp.py                 # 零依赖 CDP 客户端（纯标准库 WebSocket + JSON-RPC）
+│   ├── zte_ui.py              # 网页操作助手（Playwright 接管本机 Edge：登录 / 查状态 / 配 WAN）
+│   ├── zte_snapshot.py        # 全量配置快照抓取（状态 / 基本配置 / 高级配置 / 设备管理）
+│   ├── snapshot_now.py        # 刷机前一键快照（逐页抓取并保存）
+│   ├── zte_dump_structure.py  # 抓取 Web 界面完整页面结构 → docs/web-ui-structure.md
+│   ├── zte_dump_detail.py     # 补抓关键配置页字段明细（宽带设置 / IPv6 / 绑定 / WLAN）
+│   ├── zte_dump_detail2.py    # 补抓 IPTV 明细 / RA+DHCPv6 标签页 / 上行方式选中项
+│   ├── probe_live*.py         # 实机取证：逐条 WAN / 绑定设置 / RA / 上行方式 / 原始字段值
+│   └── probe_html.py          # 关键页面原始 HTML dump（分析 JS 联动逻辑）
 ├── firmware/
 │   ├── kernel_p1n4.bin        # 联通 kernel 镜像  44,695,552 字节  MD5 b00edea2bac30985305df345d0b876cb
 │   ├── uboot_unicom.bin       # 联通 uboot 镜像   1,835,008 字节  MD5 ec60ef2071a60b7d422e252ca7f52248
@@ -597,6 +620,18 @@ GUA                  2408:8262:7e59:2219:d2dd:7cff:fe85:953f
 > `48,3185,3600` 这类组合，然后 WAN 侧对应连接也必须是**桥接**模式。
 > **只把 IPTV 端口绑到 LAN4 而不动 VLAN 绑定，机顶盒插 LAN1 是收不到 IPTV 流的。**
 
+#### 2026-11-01 更新：完整实测方案（上述推断有两处需纠正）
+
+上面这段是早期根据页面结构推断的，实机跑通后有两处要改：
+
+1. **VLAN 绑定的格式不是逗号组合**。实际是「每个端口一个输入框，一行一条 `用户VLAN/运营商VLAN`」，
+   例如 LAN1 填两行：`48/48` 和 `3185/3185`。
+2. **不需要"WAN 侧必须是桥接"这个前提**。上网 WAN 保持**路由模式**（光猫自己拨号）也能和桥接的 IPTV 共存，
+   两者靠 `MultiWancConfProduct.VlanPortMask` 在同一个 bit 上重叠实现。
+
+完整步骤、位掩码换算、抓包验证方法、四层排查法见
+**[docs/iptv-single-line.md](docs/iptv-single-line.md)**。
+
 ### 坑 F · WiFi 的"密钥1~4"是 WEP 槽位，不是生效口令
 
 > 实测（2.4G 与 5G 一致）：
@@ -693,8 +728,14 @@ XGPON 是**物理层标准**：局端（OLT/ONU 汇聚侧）必须发出 XGPON �
    `[0x540000, 0x2AA0000)` 区间是高熵压缩数据（由官方升级程序展开成 rootfs），**直接 kwrite 整段进去
    不含可挂载的 jffs2**——这就是为什么本流程只写 `[0x0, 0x2AA0000)` 的 kernel 段而 rootfs 交给
    联通固件首次启动自建。（实测"联通 kernel 头 + 移动 rootfs 切片"的混合镜像也起不来，别折腾。）
-3. **本固件 sendcmd 固化 telnet 无效**：重启后 23 端口依旧关闭。ZTElnet26 可以随时开，但
-   **`factorymode/nE%jA@5b` 只在硬复位后的默认配置下有效**——一旦 `sdefconf`/ITMS 下发改写过
+3. ~~**本固件 sendcmd 固化 telnet 无效**~~ → **✅ 已破解并实机验证通过，见
+   [docs/telnet-solidify.md](docs/telnet-solidify.md)**。
+   根因是 **`TelnetCfg` 表在运行时只读**：`sendcmd 1 DB set TelnetCfg ...` 被静默丢弃
+   （对照实验：同一条命令对 `MgtServer` 正常）。真正的固化路径是改写加密的
+   `/userconfig/cfg/db_user_cfg.xml`（AES-256-CBC + zlib），且必须
+   **同时覆盖 `db_backup_cfg.xml`**、**执行完不能跑 `DB save` / `DB rreset`**，最后 `reboot`。
+   本仓库已用 Python 完整复刻该加解密（`tools/zte_cfg.py`），固化后 `root/12345` 两次重启复验均通过。
+   另外：`factorymode/nE%jA@5b` 只在硬复位后的默认配置下有效——一旦 `sdefconf`/ITMS 下发改写过
    DevAuthInfo，工厂登录会稳定返回 `http code err 401`（实机复现：MAC 填对也 401），
    工具 `-h` 里那句 “To enable the default password, please push reset button for 15 seconds”
    说的就是这个前提。别把 401 当网络问题反复重试。

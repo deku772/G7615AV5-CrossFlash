@@ -62,15 +62,28 @@ with sync_playwright() as p:
     for url in ("/getpage.gch?pid=1001&hidden=upgrade",
                 "/getpage.gch?pid=1002&nextpage=manager_upgrade_t.gch"):
         try:
-            pg.goto(BASE + url, wait_until="domcontentloaded", timeout=25000)
-            pg.wait_for_timeout(3000)
+            mf.evaluate("location.href='%s'" % url)
+            got = None
+            for i in range(24):
+                pg.wait_for_timeout(500)
+                f = pg.frame(name="mainFrame")
+                if f is not None:
+                    try:
+                        if f.evaluate("document.readyState") in ("complete", "interactive"):
+                            got = f
+                            break
+                    except Exception:
+                        pass
             w("")
             w("### " + url)
-            w("实际: " + pg.url)
-            w("frames=" + str([f.name for f in pg.frames]))
-            w(pg.inner_text("body")[:2000])
+            if got is None:
+                w("!! mainFrame 未恢复")
+                continue
+            mf = got
+            w("实际: " + mf.evaluate("location.href"))
+            w(mf.inner_text("body")[:2000])
             w("--- 表单/输入 ---")
-            w(pg.evaluate("""(function(){var o=[];
+            w(mf.evaluate("""(function(){var o=[];
                 document.querySelectorAll('input,form').forEach(function(e){
                   o.push(e.tagName+' type='+(e.type||'')+' id='+(e.id||'')+' name='+(e.name||'')+' accept='+(e.getAttribute('accept')||'')+' action='+(e.getAttribute('action')||''));});
                 return o.join('\\n');})()"""))
