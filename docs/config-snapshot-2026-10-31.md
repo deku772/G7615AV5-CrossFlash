@@ -17,9 +17,9 @@
 
 | 连接 | 封装类型 | 连接模式 | 业务类型 | IP协议版本 | VLAN 模式 | VLAN ID | 802.1p | 端口绑定 | 其它 |
 |---|---|---|---|---|---|---|---|---|---|
-| `1_TR069_R_VID_3600`<br>(`IGD.WD1.WCD1.WCIP1`) | IPoE | 路由 | TR069 | IPv4 | 改写(tag) | 3600 | 0 | PON 侧由 VLAN 绑定管 | MTU 1480，DHCP 服务是，NAT 关 |
-| `2_INTERNET_R_VID_48`<br>(`IGD.WD1.WCD3.WCPPP1`) | PPPoE | 路由 | INTERNET | **IPv4/v6** | 改写(tag) | **48** | 0 | LAN1 ✓ LAN2 ✓ LAN3 ✓ LAN4 ✗ | 用户名 `clan2301317426`，MTU 1480，NAT 是（全对称型） |
+| `2_INTERNET_R_VID_48`<br>(`IGD.WD1.WCD3.WCPPP1`) | PPPoE | 路由 | INTERNET | **IPv4/v6** | 改写(tag) | **48** | 0 | **LAN1 ✓ LAN2 ✓ LAN3 ✓ + SSID1(2.4G) ✓ + SSID5(5G) ✓**，LAN4 ✗ | 用户名 `clan2301317426`，MTU 1480，NAT 是（全对称型） |
 | `3_IPTV_B_VID_3185`<br>(`IGD.WD1.WCD4.WCIP1`) | IPoE | **桥接** | IPTV | IPv4 | 改写(tag) | **3185** | 0 | LAN1 ✗ LAN2 ✗ LAN3 ✗ **LAN4 ✓** | DHCP 服务否，拨号模式相关项全灰 |
+| `1_TR069_R_VID_3600` | IPoE | 路由 | TR069 | IPv4 | 改写(tag) | 3600 | 0 | （无端口绑定；ACS 通道走 PON 侧 VLAN 绑定） | MTU 1480，DHCP 服务是，NAT 关 |
 
 **IPv6 相关页面的真实值**（原快照未覆盖，本次补抓）：
 

@@ -278,7 +278,7 @@ python tools/zte_snapshot.py docs/config-snapshot-2026-10-31.md
 | VLAN ID | **48** | ← 这就是 VID |
 | 802.1p | 0 | |
 | 启用 NAT | 是 / 全对称型 | |
-| 端口绑定 | LAN1 ✓ LAN2 ✓ LAN3 ✓ LAN4 ✗ | |
+| 端口绑定 | **LAN1 ✓ LAN2 ✓ LAN3 ✓ + SSID1(2.4G) ✓ + SSID5(5G) ✓**，LAN4 ✗ | checkbox `Frm_PortETH1~3` / `Frm_PortWLAN1,5` |
 | 拨号模式 | 自动连接 | |
 
 **IPTV 逐项填写**：
@@ -291,7 +291,12 @@ python tools/zte_snapshot.py docs/config-snapshot-2026-10-31.md
 | VLAN 模式 | 改写(tag) | |
 | VLAN ID | **3185** | |
 | DHCP 服务使能 | 否 | 桥接模式不拨 DHCP |
-| 端口绑定 | **仅 LAN4 ✓** | 见 Step 15 |
+| 端口绑定 | **仅 LAN4 ✓**（`Frm_PortETH4`） | 见 Step 15 |
+
+> ⚠️ **注意 INTERNET 绑了 SSID1 和 SSID5**——即 **2.4G 和 5G 无线用户走这条 PPPoE 上网**。
+> 这不是"Wi-Fi 绑定"的新机制，而是端口绑定表里把无线 SSID 也当作一个接入端口来用。
+> 如果你把 SSID5 也勾给 IPTV，**无线用户就上不了网了**（一条 WAN 不能同时被两个业务独占同一组口）。
+> 改绑时务必记住：`Frm_PortWLAN5` = **SSID5 = 5G**，不是 WLAN2（2.4G 的第二个 SSID）。
 
 **下发动作**（关键，别忘）：
 
@@ -573,6 +578,8 @@ nslookup -type=AAAA www.baidu.com
 | | 封装类型 | `WanAddress_select`（PPP=PPPoE, IP=IPoE） |
 | | 连接模式 | `WanConnectMode_select`（Route=路由, BRIDGE=桥接） |
 | | 业务类型 | `Frm_ServList`（1=INTERNET, 2=TR069, **8=IPTV**） |
+| 上行线路配置 | 端口绑定 LAN1~4 / PON | `Frm_PortETH1` ~ `Frm_PortETH5`（ETH5=PON） |
+| | 端口绑定 SSID1~8 | `Frm_PortWLAN1` ~ `Frm_PortWLAN8`（**WLAN5=SSID5=5G**，不是 WLAN2） |
 | 绑定设置 | 绑定模式 | `Frm_Mode`（0=端口绑定, 1=VLAN绑定） |
 | | LAN1~4 VLAN绑定 | `Frm_VLAN0a` ~ `Frm_VLAN3a` |
 | 上行方式 | 模式选择 | `Frm_LANMode`（1=自适应, 2=GPON, 4=XGPON, 49~52=网口1~4） |

@@ -468,7 +468,7 @@ LOID 注册成功后，ITMS 会下发业务模板，本例生成：
 | 用户名 | `Frm_UserName` | `clan2301317426`（业务侧下发，密码在 DB 里是 `******` 读不出，需自己补） |
 | MTU | `Frm_MTU` | 1480 |
 | IP 协议版本 | `Frm_protocol` | `IPv4/v6`（value=3） |
-| 端口绑定 | — | LAN1/LAN2/LAN3 = 是，LAN4 = 否 |
+| 端口绑定 | `Frm_PortETH1~3` / `Frm_PortWLAN1,5` | **LAN1 ✓ LAN2 ✓ LAN3 ✓ + SSID1(2.4G) ✓ SSID5(5G) ✓**，LAN4 ✗ |
 | 启用 NAT | — | 是（全对称型） |
 
 三条 WAN 的真实参数（同一页面分别选中可看到）：
@@ -476,8 +476,8 @@ LOID 注册成功后，ITMS 会下发业务模板，本例生成：
 | 连接 | 封装 | 模式 | 业务类型 | VLAN 模式 | VLAN ID | 端口绑定 |
 |---|---|---|---|---|---|---|
 | `1_TR069_R_VID_3600` | IPoE | 路由 | TR069 | 改写(tag) | 3600 | PON 侧由 VLAN 绑定表管 |
-| `2_INTERNET_R_VID_48` | PPPoE | 路由 | INTERNET | 改写(tag) | 48 | LAN1/2/3 |
-| `3_IPTV_B_VID_3185` | IPoE | **桥接** | IPTV | 改写(tag) | 3185 | **仅 LAN4** |
+| `2_INTERNET_R_VID_48` | PPPoE | 路由 | INTERNET | 改写(tag) | 48 | LAN1/2/3 + SSID1 + SSID5 |
+| `3_IPTV_B_VID_3185` | IPoE | **桥接** | IPTV | 改写(tag) | 3185 | **仅 LAN4**（ETH4） |
 
 > ⚠️ **别用"新建WAN连接"表单来核对配置**——它的默认值（untag、VLAN 空、IPv4、MTU 1480）
 > 和任何真实连接都不一样，用它做对照会得出错误结论。核对一律用下拉框选中具体连接。
@@ -561,6 +561,11 @@ GUA                  2408:8262:7e59:2219:d2dd:7cff:fe85:953f
 
 > 实测：ITMS 下发的 `3_IPTV_B_VID_3185` 是 **桥接(BRIDGE) + IPoE + VLAN 3185**，
 > **端口绑定只有 LAN4 = 是**（LAN1/2/3 = 否）。也就是说机顶盒**只能插 LAN4**。
+>
+> ⚠️ 顺带注意：INTERNET 那条连接同时绑了 **SSID1(2.4G) 和 SSID5(5G)**——
+> 端口绑定表把无线 SSID 也当接入端口用，**无线用户就是走这条 PPPoE 上网的**。
+> 所以别把 SSID5 勾给 IPTV，否则无线用户直接断网。
+> 注意 `Frm_PortWLAN5` = **SSID5 = 5G**，不是 WLAN2（那是 2.4G 的第二个 SSID）。
 
 要让 4 个口都能接 IPTV，走的是「基本配置 → **绑定设置**」里的 **VLAN 绑定**：
 
